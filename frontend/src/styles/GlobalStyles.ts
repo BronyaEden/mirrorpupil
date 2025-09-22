@@ -1,4 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
+import { theme } from './theme';
 
 export const GlobalStyles = createGlobalStyle`
   * {
@@ -17,12 +18,15 @@ export const GlobalStyles = createGlobalStyle`
       'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background: linear-gradient(135deg, #0B1426 0%, #1A2332 25%, #2A3441 50%, #1E3A8A 75%, #1A2332 100%);
     background-attachment: fixed;
-    color: ${props => props.theme.colors.text.primary};
+    color: #FFFFFF;
     line-height: 1.6;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    position: relative;
+    overflow-x: hidden;
+    cursor: none;
     
     &::before {
       content: '';
@@ -51,39 +55,39 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   ::-webkit-scrollbar-track {
-    background: ${props => props.theme.colors.background.secondary};
+    background: #1A2332;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: ${props => props.theme.colors.primary.main};
+    background: #00D9FF;
     border-radius: 4px;
     transition: background 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: ${props => props.theme.colors.primary.light};
+    background: #33E1FF;
   }
 
   /* 选中文本样式 */
   ::selection {
-    background: ${props => props.theme.colors.primary.main};
-    color: ${props => props.theme.colors.text.primary};
+    background: #00D9FF;
+    color: #FFFFFF;
   }
 
   ::-moz-selection {
-    background: ${props => props.theme.colors.primary.main};
-    color: ${props => props.theme.colors.text.primary};
+    background: #00D9FF;
+    color: #FFFFFF;
   }
 
   /* 链接样式 */
   a {
-    color: ${props => props.theme.colors.primary.main};
+    color: #00D9FF;
     text-decoration: none;
     transition: color 0.2s ease;
 
     &:hover {
-      color: ${props => props.theme.colors.primary.light};
+      color: #33E1FF;
     }
   }
 
@@ -213,10 +217,16 @@ export const GlobalStyles = createGlobalStyle`
 
   @keyframes float {
     0%, 100% {
-      transform: translateY(0px);
+      transform: translateY(0px) translateX(0px);
+      opacity: 0.7;
     }
-    50% {
-      transform: translateY(-10px);
+    33% {
+      transform: translateY(-30px) translateX(20px);
+      opacity: 1;
+    }
+    66% {
+      transform: translateY(10px) translateX(-15px);
+      opacity: 0.8;
     }
   }
 
@@ -228,15 +238,37 @@ export const GlobalStyles = createGlobalStyle`
       background-position: calc(200px + 100%) 0;
     }
   }
+  
+  @keyframes twinkle {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+  
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
 
   /* 响应式设计 */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+  @media (max-width: 768px) {
     html {
       font-size: 14px;
     }
   }
 
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+  @media (max-width: 1024px) {
     body {
       font-size: 0.9rem;
     }
@@ -274,7 +306,7 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   .ant-menu-dark {
-    background: ${props => props.theme.colors.background.secondary};
+    background: #1A2332;
   }
 
   .ant-btn-primary {
@@ -294,13 +326,13 @@ export const GlobalStyles = createGlobalStyle`
   .ant-input, .ant-input-password {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    color: ${props => props.theme.colors.text.primary};
+    color: #FFFFFF;
     backdrop-filter: blur(10px);
     font-weight: 500;
     
     &:focus, &:hover {
       background: rgba(255, 255, 255, 0.15);
-      border-color: ${props => props.theme.colors.primary.main};
+      border-color: #00D9FF;
       box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.2), 0 4px 12px rgba(0, 217, 255, 0.1);
     }
     
@@ -317,7 +349,7 @@ export const GlobalStyles = createGlobalStyle`
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     
     .ant-card-head-title {
-      color: ${props => props.theme.colors.text.primary};
+      color: #FFFFFF;
       font-weight: 700;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
@@ -334,7 +366,7 @@ export const GlobalStyles = createGlobalStyle`
       background: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
       border: 1px solid rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(20px);
-      color: ${props => props.theme.colors.text.primary};
+      color: #FFFFFF;
     }
   }
   

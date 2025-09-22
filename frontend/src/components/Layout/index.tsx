@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Layout as AntLayout } from 'antd';
 import styled from 'styled-components';
-import Header from './Header';
 import Footer from './Footer';
 import { ResponsiveContainer, MobileSidebar } from '../ResponsiveComponents';
 import { useViewport } from '../../hooks/useResponsive';
@@ -14,19 +13,24 @@ const StyledLayout = styled(AntLayout)`
   min-height: 100vh;
   background: transparent;
   position: relative;
+  
+  /* 确保不影响Header的固定定位 */
+  overflow-x: hidden;
 `;
 
 const StyledContent = styled(Content)`
   background: transparent;
-  padding: 24px;
+  /* 为全局固定Header预留空间 */
+  padding: 88px 24px 24px 24px; /* 64px(GlobalHeader高度) + 24px(间距) */
   flex: 1;
+  min-height: 100vh;
   
   ${mediaQuery.mobile(`
-    padding: 16px;
+    padding: 72px 16px 16px 16px; /* 56px(GlobalHeader高度) + 16px(间距) */
   `)}
   
   ${mediaQuery.lg(`
-    padding: 32px;
+    padding: 96px 32px 32px 32px; /* 大屏幕更大的间距 */
   `)}
 `;
 
@@ -50,7 +54,7 @@ const Layout: React.FC = () => {
 
   return (
     <StyledLayout>
-      <Header onMenuClick={handleSidebarToggle} />
+      {/* 不再包含Header，由GlobalHeader全局管理 */}
       
       <StyledContent>
         <ResponsiveContainer>

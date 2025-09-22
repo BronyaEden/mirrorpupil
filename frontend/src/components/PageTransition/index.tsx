@@ -80,9 +80,8 @@ const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
         variants={pageVariants}
         transition={pageTransition}
         style={{
-          position: 'absolute',
           width: '100%',
-          height: '100%'
+          minHeight: '100%'
         }}
       >
         {children}

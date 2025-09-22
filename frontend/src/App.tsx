@@ -11,6 +11,8 @@ import FileUpload from './pages/FileUpload';
 import UserProfile from './pages/UserProfile';
 import ChatInterface from './pages/ChatInterface';
 import AuthPage from './pages/AuthPage';
+import GlobalHeader from './components/GlobalHeader';
+import GlobalMouseEffects from './components/GlobalMouseEffects';
 import AnimatedBackground from './components/AnimatedBackground';
 import PageTransition from './components/PageTransition';
 import { GlobalStyles } from './styles/GlobalStyles';
@@ -32,12 +34,18 @@ const App: React.FC = () => {
             <GlobalStyles />
             <AnimatedBackground />
             <Router>
+              {/* 全局固定Header - 直接渲染到body */}
+              <GlobalHeader />
+              
+              {/* 全局鼠标特效 - 直接渲染到body */}
+              <GlobalMouseEffects />
+              
               <PageTransition>
                 <Routes>
                   {/* 公开路由 */}
                   <Route path="/auth" element={<AuthPage />} />
                   
-                  {/* 应用主体 */}
+                  {/* 应用主体 - 不再包含Header */}
                   <Route path="/" element={<Layout />}>
                     <Route index element={<HomePage />} />
                     <Route path="files" element={<FileExplorer />} />
