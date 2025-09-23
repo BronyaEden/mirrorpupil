@@ -21,7 +21,6 @@ import {
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 
-const { Title, Text } = Typography;
 const { Dragger } = Upload;
 const { TextArea } = Input;
 const { Option } = Select;
@@ -199,9 +198,9 @@ const FileUpload: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Title level={2} style={{ color: '#fff', textAlign: 'center', marginBottom: 32 }}>
+        <Typography.Title level={2} style={{ color: '#fff', textAlign: 'center', marginBottom: 32 }}>
           文件上传
-        </Title>
+        </Typography.Title>
         
         <StyledCard>
           <Form
@@ -233,10 +232,10 @@ const FileUpload: React.FC = () => {
               
               {uploadFile && (
                 <div style={{ marginTop: 16, padding: 16, background: 'rgba(0, 217, 255, 0.1)', borderRadius: 8 }}>
-                  <Text strong style={{ color: '#00D9FF' }}>已选择文件：</Text>
-                  <Text style={{ color: '#fff', marginLeft: 8 }}>
+                  <Typography.Text strong style={{ color: '#00D9FF' }}>已选择文件：</Typography.Text>
+                  <Typography.Text style={{ color: '#fff', marginLeft: 8 }}>
                     {uploadFile.name} ({(uploadFile.size / 1024 / 1024).toFixed(2)} MB)
-                  </Text>
+                  </Typography.Text>
                 </div>
               )}
             </Form.Item>
@@ -312,9 +311,9 @@ const FileUpload: React.FC = () => {
                   size="small"
                 />
               </TagInput>
-              <Text type="secondary" style={{ fontSize: '0.85rem', marginTop: 4, display: 'block' }}>
+              <Typography.Text type="secondary" style={{ fontSize: '0.85rem', marginTop: 4, display: 'block' }}>
                 添加相关标签，便于其他用户搜索和发现
-              </Text>
+              </Typography.Text>
             </Form.Item>
 
             {/* 访问权限设置 */}
@@ -324,10 +323,10 @@ const FileUpload: React.FC = () => {
             >
               <Space>
                 <Switch />
-                <Text style={{ color: '#fff' }}>公开文件</Text>
-                <Text type="secondary" style={{ fontSize: '0.85rem' }}>
+                <Typography.Text style={{ color: '#fff' }}>公开文件</Typography.Text>
+                <Typography.Text type="secondary" style={{ fontSize: '0.85rem' }}>
                   （关闭后文件将不会在公开列表中显示）
-                </Text>
+                </Typography.Text>
               </Space>
             </Form.Item>
 

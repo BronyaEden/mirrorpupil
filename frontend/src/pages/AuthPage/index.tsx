@@ -7,8 +7,6 @@ import styled from 'styled-components';
 import { loginUser, registerUser } from '../../store/authSlice';
 import { AppDispatch } from '../../store';
 
-const { Title, Text } = Typography;
-
 // 多彩动态背景容器
 const AuthContainer = styled.div`
   height: 100vh;
@@ -121,7 +119,7 @@ const AuthCard = styled(Card)`
 `;
 
 // 炫彩标题
-const AuthTitle = styled(Title)`
+const AuthTitle = styled(Typography.Title)`
   &.ant-typography {
     text-align: center;
     margin-bottom: 24px;
@@ -312,7 +310,7 @@ const StyledLink = styled(Link)`
 `;
 
 // 炫彩文本
-const StyledText = styled(Text)`
+const StyledText = styled(Typography.Text)`
   &.ant-typography {
     color: rgba(255, 255, 255, 0.8) !important;
     font-weight: 500;

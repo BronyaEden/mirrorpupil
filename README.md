@@ -46,11 +46,21 @@ file-social-platform/
 - 实时聊天
 - 用户互动
 
+### 管理后台
+- 管理员登录认证
+- 用户管理
+- 文件管理
+- 系统监控
+- 数据分析
+- 安全管理
+- 系统设置
+
 ### 用户体验
 - 响应式设计
 - 炫酷动画效果
 - 粒子背景系统
 - 流畅的页面过渡
+- 自定义鼠标效果
 
 ## 技术栈
 
@@ -73,7 +83,7 @@ file-social-platform/
 ### 使用Docker（推荐）
 ```bash
 # 克隆项目
-git clone <repository-url>
+git clone https://github.com/BronyaEden/my-project.git
 cd file-social-platform
 
 # 配置环境变量
@@ -141,6 +151,9 @@ npm run dev  # 启动开发服务器 (http://localhost:5000)
 ### 聊天界面
 ![聊天界面](./docs/screenshots/chat.png)
 
+### 管理后台
+![管理后台](./docs/screenshots/admin-dashboard.png)
+
 ## 🎯 开发状态
 
 ### ✅ 已完成功能
@@ -152,20 +165,20 @@ npm run dev  # 启动开发服务器 (http://localhost:5000)
 - [x] Redux状态管理配置
 - [x] Docker容器化部署
 - [x] 基础组件和页面结构
+- [x] 文件上传和管理系统
+- [x] 实时聊天功能
+- [x] 管理员面板
 
 ### 🚧 开发中功能
-- [ ] 文件上传和管理系统
-- [ ] 实时聊天功能
-- [ ] 用户个人资料页面
-- [ ] 文件搜索和过滤
+- [ ] 用户个人资料页面完善
+- [ ] 文件搜索和过滤优化
 - [ ] 社交互动功能（关注/点赞）
+- [ ] 移动端适配优化
 
 ### 📋 待开发功能
 - [ ] 文件预览功能
 - [ ] 高级搜索
 - [ ] 通知系统
-- [ ] 管理员面板
-- [ ] 移动端适配优化
 - [ ] 国际化支持
 
 ## 🤝 贡献指南

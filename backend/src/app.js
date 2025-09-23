@@ -12,6 +12,7 @@ import SocketHandler from './services/socketHandler.js';
 import authRoutes from './routes/auth.js';
 import fileRoutes from './routes/files.js';
 import chatRoutes from './routes/chat.js';
+import adminRoutes from './routes/admin.js';
 
 // 加载环境变量
 dotenv.config();
@@ -72,6 +73,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // API路由（待实现）
 app.get('/api', (req, res) => {

@@ -39,6 +39,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 4. **访问应用**
 - 前端: http://localhost:3000
 - 后端API: http://localhost:5000/api
+- 管理后台: http://localhost:3000/admin
 - 健康检查: http://localhost:5000/api/health
 
 ### 本地开发部署
@@ -82,6 +83,10 @@ JWT_SECRET=your-256-bit-secret-key-here
 JWT_EXPIRE=24h
 JWT_REFRESH_SECRET=your-256-bit-refresh-secret-key-here
 JWT_REFRESH_EXPIRE=7d
+
+# 管理员认证配置
+ADMIN_JWT_SECRET=your-admin-secret-key-here
+ADMIN_JWT_EXPIRE=24h
 
 # 文件上传配置
 MAX_FILE_SIZE=2147483648
@@ -362,6 +367,28 @@ const migration = {
   }
 };
 ```
+
+## 管理后台配置
+
+### 管理员账户
+
+默认管理员账户:
+- 用户名: admin
+- 密码: admin123
+
+**重要**: 部署后请立即修改默认管理员密码。
+
+### 管理后台功能
+
+管理后台包含以下功能模块:
+1. 仪表板 - 系统概览和关键指标
+2. 用户管理 - 用户列表和权限管理
+3. 文件管理 - 文件浏览和管理
+4. 消息管理 - 系统消息和通知
+5. 数据分析 - 用户和文件统计
+6. 系统监控 - 系统状态和性能监控
+7. 安全管理 - 安全设置和日志
+8. 系统设置 - 系统配置和参数
 
 ## 支持和联系
 

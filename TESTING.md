@@ -163,6 +163,47 @@ describe('User Model', () => {
 });
 ```
 
+## 管理后台测试
+
+### 管理员功能测试
+
+#### 管理员认证测试
+```javascript
+import request from 'supertest';
+import app from '../src/app.js';
+
+describe('Admin Auth API', () => {
+  test('POST /api/admin/login', async () => {
+    const adminData = {
+      username: 'admin',
+      password: 'admin123'
+    };
+    
+    const response = await request(app)
+      .post('/api/admin/login')
+      .send(adminData)
+      .expect(200);
+      
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.token).toBeDefined();
+  });
+});
+```
+
+#### 管理员权限测试
+```javascript
+import request from 'supertest';
+import app from '../src/app.js';
+
+describe('Admin Authorization', () => {
+  test('应该拒绝未认证的管理员请求', async () => {
+    await request(app)
+      .get('/api/admin/users')
+      .expect(401);
+  });
+});
+```
+
 ## 端到端测试
 
 ### 使用Cypress
@@ -197,6 +238,22 @@ describe('用户认证流程', () => {
     // 验证注册成功
     cy.url().should('eq', '/');
     cy.get('[data-testid=user-menu]').should('contain', 'testuser');
+  });
+});
+
+// cypress/integration/admin.spec.js
+describe('管理员功能', () => {
+  it('应该能够登录管理后台', () => {
+    cy.visit('/admin/login');
+    
+    // 管理员登录
+    cy.get('[data-testid=admin-username]').type('admin');
+    cy.get('[data-testid=admin-password]').type('admin123');
+    cy.get('[data-testid=admin-login-button]').click();
+    
+    // 验证登录成功
+    cy.url().should('eq', '/admin/dashboard');
+    cy.get('[data-testid=admin-header]').should('contain', '管理后台');
   });
 });
 ```
@@ -253,6 +310,10 @@ scenarios:
           json:
             email: "test@example.com"
             password: "password123"
+      - get:
+          url: "/api/admin/dashboard"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
 ```
 
 ## 持续集成
