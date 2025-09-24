@@ -57,7 +57,7 @@ class ChatService {
       participants: userId,
       isActive: true
     })
-    .populate('participants', 'username avatar')
+    .populate('participants', 'username avatar coverImage isVerified')
     .populate('lastMessage')
     .sort({ lastActivity: -1 })
     .skip(skip)
@@ -82,7 +82,7 @@ class ChatService {
   // 获取会话详情
   async getConversationById(conversationId, userId) {
     const conversation = await Conversation.findById(conversationId)
-      .populate('participants', 'username avatar bio')
+      .populate('participants', 'username avatar bio coverImage isVerified')
       .populate('admins', 'username avatar');
     
     if (!conversation || !conversation.isActive) {
@@ -437,3 +437,5 @@ class ChatService {
 }
 
 export default new ChatService();
+
+

@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { Typography, Button, Row, Col, Card, Space } from 'antd';
+import { Typography, Button, Space } from 'antd';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { useSelector } from 'react-redux';
 import {
   CloudUploadOutlined,
   ShareAltOutlined,
@@ -13,6 +14,7 @@ import { useViewport } from '../../hooks/useResponsive';
 import { mediaQuery } from '../../styles/responsive';
 import { AnimatedCard } from '../../components/PageTransition';
 import { theme } from '../../styles/theme';
+import { RootState } from '../../store';
 
 const { Title, Paragraph } = Typography;
 
@@ -524,8 +526,20 @@ const CTASection = styled.div`
   `)}
 `;
 
+const CTAHeading = styled(ResponsiveText)`
+  margin-bottom: 20px;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+`;
+
+const CTADescription = styled(ResponsiveText)`
+  margin-bottom: 40px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+`;
+
 const HomePage: React.FC = () => {
   const { isMobile } = useViewport();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const particlesRef = useRef<HTMLDivElement>(null);
   const starsRef = useRef<HTMLDivElement>(null);
   // cursorRef已移除，鼠标特效由GlobalMouseEffects管理
@@ -777,9 +791,11 @@ const HomePage: React.FC = () => {
                 <Button type="primary" size="large" onClick={handleButtonClick}>
                   <Link to="/files">开始浏览</Link>
                 </Button>
-                <Button size="large" onClick={handleButtonClick}>
-                  <Link to="/auth">立即注册</Link>
-                </Button>
+                {!isAuthenticated && (
+                  <Button size="large" onClick={handleButtonClick}>
+                    <Link to="/auth">立即注册/登录</Link>
+                  </Button>
+                )}
               </ActionButtons>
             </HeroButtons>
           </HeroSection>
@@ -807,7 +823,7 @@ const HomePage: React.FC = () => {
         {/* CTA Section */}
         <FadeInSection>
           <CTASection>
-            <ResponsiveText
+            <CTAHeading
               as="h3"
               size={{
                 xs: '24px',
@@ -815,20 +831,18 @@ const HomePage: React.FC = () => {
                 md: '32px'
               }}
               color="#fff"
-              style={{ marginBottom: '20px', fontWeight: 700, textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
             >
               准备好开始您的文件社交之旅了吗？
-            </ResponsiveText>
-            <ResponsiveText
+            </CTAHeading>
+            <CTADescription
               size={{
                 xs: '16px',
                 sm: '18px'
               }}
               color="rgba(255,255,255,0.9)"
-              style={{ marginBottom: '40px', textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}
             >
               加入我们的平台，体验全新的文件管理和社交互动方式
-            </ResponsiveText>
+            </CTADescription>
             <ActionButtons>
               <Button type="primary" size="large" onClick={handleButtonClick}>
                 <Link to="/auth">免费注册</Link>

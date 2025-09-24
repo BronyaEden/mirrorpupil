@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Input,
   List,
@@ -8,11 +8,13 @@ import {
   Spin,
   Empty,
   Button,
-  Space
+  Space,
+  message
 } from 'antd';
 import {
   UserOutlined,
-  SearchOutlined
+  SearchOutlined,
+  VerifiedOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
@@ -22,6 +24,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import { useNavigate } from 'react-router-dom';
 import authAPI from '../../utils/api/auth';
+import { getFullImageUrl } from '../../utils/imageUtils';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -46,18 +49,76 @@ const SearchHeader = styled.div`
   }
 `;
 
-const UserCard = styled(Card)`
-  background: ${props => props.theme.colors.background.secondary};
-  border: 1px solid ${props => props.theme.colors.neutral.gray400};
+const UserCard = styled(Card)<{ $coverImage?: string }>`
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid #e0e0e0;
   border-radius: ${props => props.theme.borderRadius.lg};
   margin-bottom: ${props => props.theme.spacing.md};
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  height: auto;
+  min-height: 150px;
+  box-sizing: border-box;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${props => props.$coverImage 
+      ? `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${props.$coverImage})` 
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary.main};
-    box-shadow: ${props => props.theme.shadows.md};
+    border-color: #1890ff;
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+    transform: translateY(-2px);
   }
+  
+  // 闪光特效
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+    z-index: 2;
+  }
+  
+  &:hover::after {
+    left: 100%;
+  }
+  
+  // 确保内容在背景之上
+  & > div {
+    position: relative;
+    z-index: 3;
+  }
+`;
+
+const VerifiedBadge = styled.span`
+  color: #1890ff;
+  font-size: 0.8rem;
+  border: 1px solid #1890ff;
+  border-radius: 4px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 `;
 
 const UserSearch: React.FC<UserSearchProps> = () => {
@@ -79,88 +140,16 @@ const UserSearch: React.FC<UserSearchProps> = () => {
     setHasSearched(true);
 
     try {
-      // 模拟API调用
-      // const response = await authAPI.searchUsers(query, 1, 20);
-      // setUsers(response.data.data.users);
-      
-      // 模拟数据
-      setTimeout(() => {
-        setUsers([
-          {
-            _id: '1',
-            username: '张三',
-            email: 'zhangsan@example.com',
-            avatar: '',
-            bio: '热爱技术的前端工程师',
-            location: '北京',
-            website: 'https://zhangsan.dev',
-            followers: [],
-            following: [],
-            followersCount: 128,
-            followingCount: 86,
-            isActive: true,
-            isVerified: true,
-            role: 'user',
-            createdAt: new Date('2023-01-15'),
-            updatedAt: new Date('2023-01-15'),
-            preferences: {
-              theme: 'auto',
-              language: 'zh-CN',
-              notifications: { email: true, push: true }
-            }
-          },
-          {
-            _id: '2',
-            username: '李四',
-            email: 'lisi@example.com',
-            avatar: '',
-            bio: '全栈开发者，喜欢分享技术',
-            location: '上海',
-            website: 'https://lisi.dev',
-            followers: [],
-            following: [],
-            followersCount: 95,
-            followingCount: 67,
-            isActive: true,
-            isVerified: false,
-            role: 'user',
-            createdAt: new Date('2023-03-22'),
-            updatedAt: new Date('2023-03-22'),
-            preferences: {
-              theme: 'auto',
-              language: 'zh-CN',
-              notifications: { email: true, push: true }
-            }
-          },
-          {
-            _id: '3',
-            username: '王五',
-            email: 'wangwu@example.com',
-            avatar: '',
-            bio: 'UI/UX设计师，专注于用户体验',
-            location: '深圳',
-            website: 'https://wangwu.design',
-            followers: [],
-            following: [],
-            followersCount: 210,
-            followingCount: 156,
-            isActive: true,
-            isVerified: true,
-            role: 'user',
-            createdAt: new Date('2022-11-08'),
-            updatedAt: new Date('2022-11-08'),
-            preferences: {
-              theme: 'auto',
-              language: 'zh-CN',
-              notifications: { email: true, push: true }
-            }
-          }
-        ]);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('搜索用户失败:', error);
+      // 使用真实API调用替换模拟数据
+      const response = await authAPI.searchUsers(query, 1, 20);
+      console.log('Search API response:', response.data);
+      setUsers(response.data.data.users);
       setLoading(false);
+    } catch (error: any) {
+      console.error('搜索用户失败:', error);
+      message.error('搜索用户失败: ' + (error.response?.data?.message || error.message));
+      setLoading(false);
+      setUsers([]);
     }
   };
 
@@ -200,49 +189,80 @@ const UserSearch: React.FC<UserSearchProps> = () => {
           users.length > 0 ? (
             <List
               dataSource={users}
-              renderItem={(user) => (
-                <UserCard key={user._id} onClick={() => handleUserClick(user._id)}>
-                  <Card.Body style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <Avatar 
-                      size={48} 
-                      icon={<UserOutlined />} 
-                      src={user.avatar}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Text strong style={{ fontSize: '1.1rem' }}>
-                          {user.username}
+              renderItem={(user) => {
+                // 确保获取完整的图片URL
+                const fullCoverImage = user.coverImage ? getFullImageUrl(user.coverImage) : undefined;
+                const fullAvatarImage = user.avatar ? getFullImageUrl(user.avatar) : undefined;
+                
+                console.log('User data:', user);
+                console.log('Full cover image URL:', fullCoverImage);
+                console.log('Full avatar image URL:', fullAvatarImage);
+                
+                return (
+                  <UserCard 
+                    key={user._id} 
+                    onClick={() => handleUserClick(user._id)}
+                    $coverImage={fullCoverImage}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 16, 
+                      padding: '20px',
+                      height: '100%',
+                      boxSizing: 'border-box',
+                      position: 'relative',
+                      backgroundColor: 'transparent'  // 确保背景透明
+                    }}>
+                      <Avatar 
+                        size={80} 
+                        icon={<UserOutlined />} 
+                        src={fullAvatarImage}
+                        style={{ 
+                          border: '3px solid #fff',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                          zIndex: 4  // 确保头像在最上层
+                        }}
+                      />
+                      <div style={{ flex: 1, zIndex: 4 }}>
+                        {/* 确保内容在最上层 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                          <Text strong style={{ fontSize: '1.3rem', color: '#fff' }}>
+                            {user.username}
+                          </Text>
+                          {user.isVerified && (
+                            <VerifiedBadge>
+                              <VerifiedOutlined />
+                              已验证
+                            </VerifiedBadge>
+                          )}
+                        </div>
+                        <Text type="secondary" ellipsis style={{ 
+                          maxWidth: '100%',
+                          marginBottom: 12,
+                          display: 'block',
+                          fontSize: '1rem',
+                          color: 'rgba(255, 255, 255, 0.85)'
+                        }}>
+                          {user.bio || '暂无个人简介'}
                         </Text>
-                        {user.isVerified && (
-                          <span style={{ 
-                            color: '#1890ff', 
-                            fontSize: '0.8rem',
-                            border: '1px solid #1890ff',
-                            borderRadius: '4px',
-                            padding: '0 4px'
-                          }}>
-                            已验证
-                          </span>
-                        )}
+                        <Space size="middle" style={{ marginTop: 8 }}>
+                          <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            关注者: {user.followersCount}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            关注中: {user.followingCount}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            加入于 {dayjs(user.createdAt).fromNow()}
+                          </Text>
+                        </Space>
                       </div>
-                      <Text type="secondary" ellipsis style={{ maxWidth: '80%' }}>
-                        {user.bio || '暂无个人简介'}
-                      </Text>
-                      <Space style={{ marginTop: 4 }}>
-                        <Text type="secondary" style={{ fontSize: '0.85rem' }}>
-                          关注者: {user.followersCount}
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: '0.85rem' }}>
-                          关注中: {user.followingCount}
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: '0.85rem' }}>
-                          加入于 {dayjs(user.createdAt).fromNow()}
-                        </Text>
-                      </Space>
                     </div>
-                  </Card.Body>
-                </UserCard>
-              )}
+                  </UserCard>
+                );
+              }}
+
             />
           ) : (
             <Empty
@@ -254,7 +274,7 @@ const UserSearch: React.FC<UserSearchProps> = () => {
           <Empty
             description="请输入关键词搜索用户"
             style={{ color: '#B0BEC5', padding: '60px 0' }}
-          />
+            />
         )}
       </SearchContainer>
     </motion.div>

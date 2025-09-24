@@ -136,12 +136,14 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
         const imgOffsetY = imgRect.top - containerRect.top;
         
         // 根据裁剪类型设置裁剪区域大小
-        const cropWidth = cropType === 'avatar' ? 200 : 1920;
-        const cropHeight = cropType === 'avatar' ? 200 : 600;
+        // 背景图比例应该是 1920:600 = 3.2:1
+        // 在300x300的容器中，背景图裁剪区域应该是300x93.75 (约等于300x94)
+        const cropWidth = cropType === 'avatar' ? 200 : 300;
+        const cropHeight = cropType === 'avatar' ? 200 : 94;
         
         // 计算裁剪区域（在容器中固定为指定大小的中心区域）
-        const cropAreaX = (containerRect.width - (cropType === 'avatar' ? 200 : 300)) / 2;
-        const cropAreaY = (containerRect.height - (cropType === 'avatar' ? 200 : 200)) / 2;
+        const cropAreaX = (containerRect.width - cropWidth) / 2;
+        const cropAreaY = (containerRect.height - cropHeight) / 2;
         
         // 计算裁剪区域相对于图片的位置
         const cropRelativeX = cropAreaX - imgOffsetX - position.x;
@@ -150,8 +152,8 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
         // 考虑缩放因素，计算在原始图片中的裁剪区域
         const sourceX = (cropRelativeX * scaleX) / scale;
         const sourceY = (cropRelativeY * scaleY) / scale;
-        const sourceWidth = ((cropType === 'avatar' ? 200 : 300) * scaleX) / scale;
-        const sourceHeight = ((cropType === 'avatar' ? 200 : 200) * scaleY) / scale;
+        const sourceWidth = (cropWidth * scaleX) / scale;
+        const sourceHeight = (cropHeight * scaleY) / scale;
 
         // 确保裁剪区域不超出图片边界
         const safeSourceX = Math.max(0, Math.min(img.naturalWidth - sourceWidth, sourceX));
@@ -231,8 +233,8 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             sourceHeight,
             0,
             0,
-            cropWidth,
-            cropHeight
+            200,
+            200
           );
         }
 
@@ -309,12 +311,11 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
                 style={{ 
                   maxWidth: '100%', 
                   maxHeight: '100%',
-                  transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+                  transform: `translate(-50%, -50%) scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
                   transformOrigin: 'center center',
                   position: 'absolute',
                   top: '50%',
-                  left: '50%',
-                  transform: `translate(-50%, -50%) scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`
+                  left: '50%'
                 }} 
               />
               {/* 裁剪区域遮罩 */}
@@ -324,7 +325,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 width: cropType === 'avatar' ? 200 : 300,
-                height: cropType === 'avatar' ? 200 : 200,
+                height: cropType === 'avatar' ? 200 : 94,
                 border: '2px solid #1890ff',
                 borderRadius: cropType === 'avatar' ? '50%' : '0',
                 boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',

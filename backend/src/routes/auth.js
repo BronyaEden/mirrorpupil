@@ -168,8 +168,8 @@ router.get('/search-users',
   query('q')
     .notEmpty()
     .trim()
-    .isLength({ min: 2 })
-    .withMessage('搜索关键词至少需要2个字符'),
+    .isLength({ min: 1 })
+    .withMessage('搜索关键词至少需要1个字符'),
   query('page')
     .optional()
     .isInt({ min: 1 })

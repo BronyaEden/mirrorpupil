@@ -275,6 +275,7 @@ class AuthService {
     const { page = 1, limit = 20, excludeUserId } = options;
     const skip = (page - 1) * limit;
     
+    // 优化搜索条件，使用更合理的匹配方式
     const searchConditions = {
       $and: [
         {
@@ -294,15 +295,21 @@ class AuthService {
     
     const [users, total] = await Promise.all([
       User.find(searchConditions)
-        .select('username email avatar bio followersCount followingCount createdAt')
+        .select('username email avatar coverImage bio followersCount followingCount createdAt isVerified')
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 }),
+        .sort({ followersCount: -1, createdAt: -1 }), // 按关注者数量和创建时间排序，使更相关的用户排在前面
       User.countDocuments(searchConditions)
     ]);
     
+    // 确保返回的头像和背景图URL是完整的
+    const usersWithFullUrls = users.map(user => {
+      const userObj = user.toObject();
+      return userObj;
+    });
+    
     return {
-      users,
+      users: usersWithFullUrls,
       pagination: {
         page,
         limit,

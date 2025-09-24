@@ -6,6 +6,8 @@
 
 # testing
 /coverage
+.qoder/
+/.qoder/
 
 # production
 /build
@@ -25,7 +27,6 @@ yarn-error.log*
 # IDE
 .vscode/
 .idea/
-.qoder/
 
 # OS
 Thumbs.db

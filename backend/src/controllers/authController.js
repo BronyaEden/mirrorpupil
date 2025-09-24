@@ -203,10 +203,10 @@ class AuthController {
     try {
       const { q: query, page, limit } = req.query;
       
-      if (!query || query.trim().length < 2) {
+      if (!query || query.trim().length < 1) {
         return res.status(400).json({
           success: false,
-          message: '搜索关键词至少需要2个字符'
+          message: '搜索关键词至少需要1个字符'
         });
       }
 
@@ -268,8 +268,8 @@ class AuthController {
       // 删除原始文件
       await fs.unlink(avatarPath);
       
-      // 更新用户信息
-      const avatarUrl = `/uploads/processed-${req.file.filename}`;
+      // 更新用户信息，生成完整的URL
+      const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/processed-${req.file.filename}`;
       const user = await AuthService.updateProfile(req.user.userId, { avatar: avatarUrl });
       
       res.json({
@@ -309,8 +309,8 @@ class AuthController {
       // 删除原始文件
       await fs.unlink(coverPath);
       
-      // 更新用户信息
-      const coverUrl = `/uploads/processed-${req.file.filename}`;
+      // 更新用户信息，生成完整的URL
+      const coverUrl = `${req.protocol}://${req.get('host')}/uploads/processed-${req.file.filename}`;
       console.log('Updating user profile with coverUrl', coverUrl);
       const user = await AuthService.updateProfile(req.user.userId, { coverImage: coverUrl });
       console.log('User profile updated', user.coverImage);

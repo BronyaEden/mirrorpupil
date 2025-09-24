@@ -50,6 +50,8 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import authAPI from '../../utils/api/auth';
+import api from '../../utils/api';
+import { getFullImageUrl } from '../../utils/imageUtils';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -74,13 +76,15 @@ const ProfileContainer = styled.div`
   padding: ${props => props.theme.spacing.lg};
 `;
 
-const ProfileHeader = styled.div<{ coverImage?: string }>`
+const ProfileHeader = styled.div<{ $coverImage?: string }>`
   position: relative;
   height: 300px;
   border-radius: ${props => props.theme.borderRadius.lg};
   margin-bottom: ${props => props.theme.spacing.lg};
   overflow: hidden;
-  background: ${props => props.coverImage ? `url(${props.coverImage}) center/cover` : `linear-gradient(135deg, ${props.theme.colors.primary.main} 0%, ${props.theme.colors.secondary.main} 100%)`};
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   
   &::before {
     content: '';
@@ -89,7 +93,11 @@ const ProfileHeader = styled.div<{ coverImage?: string }>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: ${props => props.$coverImage ? 'rgba(0, 0, 0, 0.3)' : 'linear-gradient(135deg, #00D9FF 0%, #0099CC 50%, #0066FF 100%)'};
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    ${props => props.$coverImage && `background-image: url(${props.$coverImage});`}
   }
 `;
 
@@ -238,6 +246,31 @@ const Dragger = styled(Upload.Dragger)`
   }
 `;
 
+const ChatButton = styled(Button)`
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 12px;
+  padding: 0 24px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  color: white;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #764ba2, #667eea);
+  }
+  
+  &:active {
+    transform: translateY(-1px);
+  }
+`;
+
 const UserProfile: React.FC<UserProfileProps> = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -379,6 +412,27 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   
   const handleFollow = async () => {
     message.info('关注功能待实现');
+  };
+  
+  const handleChatClick = async () => {
+    if (!userData) return;
+    
+    try {
+      // 创建或获取与该用户的私人会话
+      const response = await api.post('/chat/conversations', {
+        participantIds: [userData._id],
+        conversationType: 'private'
+      });
+      
+      if (response.data.success) {
+        const conversation = response.data.data.conversation;
+        // 跳转到消息页面，并传递会话ID作为参数
+        navigate(`/messages?conversationId=${conversation._id}`);
+      }
+    } catch (error: any) {
+      console.error('创建会话失败:', error);
+      message.error(error.response?.data?.message || '创建会话失败');
+    }
   };
   
   const handleFileAction = (action: string, file: FileItem) => {
@@ -544,7 +598,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         transition={{ duration: 0.5 }}
       >
         {/* 用户信息头部 */}
-        <ProfileHeader coverImage={userData?.coverImage ? `http://localhost:5000${userData.coverImage}` : undefined}>
+        <ProfileHeader $coverImage={getFullImageUrl(userData?.coverImage) || undefined}>
           {isOwnProfile && (
             <CoverUploadButton 
               icon={<UploadOutlined />} 
@@ -557,7 +611,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
           <UserInfo>
             <ProfileAvatar
               size={120}
-              src={userData?.avatar ? `http://localhost:5000${userData.avatar}` : undefined}
+              src={getFullImageUrl(userData?.avatar) || undefined}
               icon={<UserOutlined />}
               onClick={isOwnProfile ? handleUploadAvatar : undefined}
             />
@@ -618,12 +672,12 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                     >
                       关注
                     </Button>
-                    <Button
+                    <ChatButton
                       icon={<MessageOutlined />}
-                      onClick={() => navigate('/messages')}
+                      onClick={() => handleChatClick()}
                     >
                       聊天
-                    </Button>
+                    </ChatButton>
                   </>
                 )}
                 
@@ -842,7 +896,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         }}
         onCropComplete={handleCropComplete}
         cropType={isCroppingCover ? 'cover' : 'avatar'}
-        coverFillMode="cover" // 默认使用cover模式
+        coverFillMode="cover" // 使用cover模式确保背景图完全覆盖
       />
       
       {/* 用户名修改弹窗 */}
