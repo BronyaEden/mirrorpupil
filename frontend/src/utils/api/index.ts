@@ -15,6 +15,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('API Request - Adding Authorization header:', config.url, token.substring(0, 20) + '...');
+    } else {
+      console.log('API Request - No token found for:', config.url);
     }
     return config;
   },
@@ -29,6 +32,16 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    console.error('API Response Error:', error.response?.status, error.response?.data);
+    console.error('Error config:', error.config);
+    
+    // 详细记录404错误
+    if (error.response?.status === 404) {
+      console.error('404 Error - Requested URL:', error.config?.url);
+      console.error('404 Error - Base URL:', error.config?.baseURL);
+      console.error('404 Error - Full URL:', error.config?.baseURL + error.config?.url);
+    }
+    
     const originalRequest = error.config;
     
     if (error.response?.status === 401 && !originalRequest._retry) {

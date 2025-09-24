@@ -36,8 +36,11 @@ app.use(helmet({
   contentSecurityPolicy: false // 开发环境可以关闭，生产环境建议配置
 }));
 
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:3000", "http://localhost:3001"];
+console.log('CORS Origins:', corsOrigins);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  origin: corsOrigins,
   credentials: true
 }));
 
@@ -57,7 +60,14 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // 静态文件服务
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', cors({
+  origin: corsOrigins,
+  credentials: true,
+  optionsSuccessStatus: 200
+}), (req, res, next) => {
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static('uploads'));
 
 // 健康检查端点
 app.get('/api/health', (req, res) => {
@@ -66,6 +76,18 @@ app.get('/api/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
+  });
+});
+
+// CORS测试端点
+app.get('/api/cors-test', cors({
+  origin: corsOrigins,
+  credentials: true
+}), (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS is working',
+    origin: req.get('Origin')
   });
 });
 

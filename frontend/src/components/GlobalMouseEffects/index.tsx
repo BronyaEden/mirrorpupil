@@ -10,11 +10,9 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
 
   useEffect(() => {
     if (disabled || isMobile) {
-      console.log('🚫 鼠标特效已禁用或在移动设备上');
       return;
     }
 
-    console.log('🌟 初始化全局鼠标特效系统');
 
     // 清理现有的鼠标特效元素
     const cleanupExisting = () => {
@@ -100,7 +98,6 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
       trailPositions[0].x = currentX;
       trailPositions[0].y = currentY;
       
-      console.log(`🎯 鼠标位置更新: (${currentX}, ${currentY}) - 滚动位置: ${window.scrollY}`);
     };
 
     // 鼠标离开窗口
@@ -110,14 +107,12 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
       trails.forEach(trail => {
         trail.style.opacity = '0';
       });
-      console.log('🚪 鼠标离开窗口');
     };
 
     // 鼠标进入窗口
     const handleMouseEnter = () => {
       isMouseInWindow = true;
       cursor.style.opacity = '1';
-      console.log('👋 鼠标进入窗口');
     };
 
     // 点击效果
@@ -149,7 +144,6 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
         }
       }, 600);
       
-      console.log(`💥 点击效果: (${x}, ${y})`);
     };
 
     // 轨迹动画循环
@@ -203,11 +197,9 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
     // 开始动画
     animateTrails();
 
-    console.log('✅ 全局鼠标特效初始化完成');
 
     // 清理函数
     return () => {
-      console.log('🧹 清理全局鼠标特效');
       
       // 移除事件监听器
       document.removeEventListener('mousemove', handleMouseMove);

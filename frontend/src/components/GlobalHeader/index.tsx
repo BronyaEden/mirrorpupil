@@ -83,7 +83,8 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
           {[
             { path: '/', label: '首页', icon: '🏠' },
             { path: '/files', label: '文件', icon: '📁' },
-            ...(isAuthenticated ? [{ path: '/upload', label: '上传', icon: '☁️' }] : [])
+            ...(isAuthenticated ? [{ path: '/upload', label: '上传', icon: '☁️' }] : []),
+            { path: '/profile', label: '个人中心', icon: '👤' }
           ].map(item => (
             <a
               key={item.path}

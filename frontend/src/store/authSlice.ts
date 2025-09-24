@@ -8,8 +8,10 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginForm, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(credentials);
+      console.log('Login API response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error('Login API error:', error);
       return rejectWithValue(error.response?.data?.message || '登录失败');
     }
   }
@@ -43,9 +45,15 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
+      // 调试信息
+      const token = localStorage.getItem('accessToken');
+      console.log('fetchUserProfile - Token from localStorage:', token ? token.substring(0, 20) + '...' : null);
+      
       const response = await authAPI.getProfile();
-      return response.data.user;
+      console.log('fetchUserProfile - Response:', response.data);
+      return response.data.data.user;  // 注意这里使用了.data.data.user
     } catch (error: any) {
+      console.error('fetchUserProfile - Error:', error);
       return rejectWithValue(error.response?.data?.message || '获取用户信息失败');
     }
   }
@@ -99,15 +107,56 @@ export const unfollowUser = createAsyncThunk(
   }
 );
 
+export const uploadAvatar = createAsyncThunk(
+  'auth/uploadAvatar',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.uploadAvatar(formData);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || '头像上传失败');
+    }
+  }
+);
+
+export const uploadCover = createAsyncThunk(
+  'auth/uploadCover',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.uploadCover(formData);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || '背景图上传失败');
+    }
+  }
+);
+
+export const updateUsername = createAsyncThunk(
+  'auth/updateUsername',
+  async (username: string, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.updateUsername(username);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || '用户名更新失败');
+    }
+  }
+);
+
 // 初始状态
 const initialState: AuthState = {
   isAuthenticated: false,
   user: null,
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
+  accessToken: localStorage.getItem('accessToken') || null,
+  refreshToken: localStorage.getItem('refreshToken') || null,
   loading: false,
   error: null,
 };
+
+console.log('Initial state - Tokens from localStorage:', {
+  accessToken: localStorage.getItem('accessToken') ? localStorage.getItem('accessToken')?.substring(0, 20) + '...' : null,
+  refreshToken: localStorage.getItem('refreshToken') ? localStorage.getItem('refreshToken')?.substring(0, 20) + '...' : null
+});
 
 // Slice
 const authSlice = createSlice({
@@ -156,15 +205,25 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.accessToken = action.payload.accessToken;
-        state.refreshToken = action.payload.refreshToken;
-        localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('refreshToken', action.payload.refreshToken);
+        state.user = action.payload.data.user;
+        state.accessToken = action.payload.data.accessToken;
+        state.refreshToken = action.payload.data.refreshToken;
+        // 确保令牌被正确存储到localStorage
+        if (action.payload.data.accessToken) {
+          localStorage.setItem('accessToken', action.payload.data.accessToken);
+        }
+        if (action.payload.data.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.data.refreshToken);
+        }
+        console.log('Login successful - Tokens stored in localStorage and Redux', {
+          accessToken: action.payload.data.accessToken ? action.payload.data.accessToken.substring(0, 20) + '...' : null,
+          refreshToken: action.payload.data.refreshToken ? action.payload.data.refreshToken.substring(0, 20) + '...' : null
+        });
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        console.log('Login failed:', state.error);
       });
 
     // 注册
@@ -176,11 +235,20 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.accessToken = action.payload.accessToken;
-        state.refreshToken = action.payload.refreshToken;
-        localStorage.setItem('accessToken', action.payload.accessToken);
-        localStorage.setItem('refreshToken', action.payload.refreshToken);
+        state.user = action.payload.data.user;
+        state.accessToken = action.payload.data.accessToken;
+        state.refreshToken = action.payload.data.refreshToken;
+        // 确保令牌被正确存储到localStorage
+        if (action.payload.data.accessToken) {
+          localStorage.setItem('accessToken', action.payload.data.accessToken);
+        }
+        if (action.payload.data.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.data.refreshToken);
+        }
+        console.log('Registration successful - Tokens stored in localStorage and Redux', {
+          accessToken: action.payload.data.accessToken ? action.payload.data.accessToken.substring(0, 20) + '...' : null,
+          refreshToken: action.payload.data.refreshToken ? action.payload.data.refreshToken.substring(0, 20) + '...' : null
+        });
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -214,10 +282,12 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        console.log('fetchUserProfile fulfilled - User set in Redux:', action.payload);
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        console.log('fetchUserProfile rejected:', state.error);
       });
 
     // 更新用户信息
@@ -265,6 +335,36 @@ const authSlice = createSlice({
           state.user.following = state.user.following.filter(id => id !== action.payload.userId);
           state.user.followingCount -= 1;
         }
+      })
+
+      // 上传头像
+      .addCase(uploadAvatar.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user = action.payload;
+        }
+      })
+      .addCase(uploadAvatar.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+
+      // 上传背景图
+      .addCase(uploadCover.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user = action.payload;
+        }
+      })
+      .addCase(uploadCover.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+
+      // 更新用户名
+      .addCase(updateUsername.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user = action.payload;
+        }
+      })
+      .addCase(updateUsername.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });

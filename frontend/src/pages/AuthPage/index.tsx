@@ -364,23 +364,30 @@ const AuthPage: React.FC = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await dispatch(loginUser({
+        console.log('Attempting login with:', values.email);
+        const result = await dispatch(loginUser({
           email: values.email,
           password: values.password,
         })).unwrap();
+        console.log('Login result:', result);
         message.success('登录成功！');
-        navigate('/');
+        // 登录成功后导航到个人中心页面而不是首页
+        navigate('/profile');
       } else {
-        await dispatch(registerUser({
+        console.log('Attempting registration with:', values.username, values.email);
+        const result = await dispatch(registerUser({
           username: values.username,
           email: values.email,
           password: values.password,
           confirmPassword: values.confirmPassword,
         })).unwrap();
+        console.log('Registration result:', result);
         message.success('注册成功！');
-        navigate('/');
+        // 注册成功后也导航到个人中心页面
+        navigate('/profile');
       }
     } catch (error: any) {
+      console.error('Login/Register error:', error);
       message.error(error || (isLogin ? '登录失败' : '注册失败'));
     } finally {
       setLoading(false);

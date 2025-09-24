@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { store } from './store';
+import { fetchUserProfile, logout } from './store/authSlice';
+import { RootState } from './store';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import FileExplorer from './pages/FileExplorer';
@@ -35,6 +37,40 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/auth" />;
 };
 
+// 用户状态恢复组件
+const UserStateRecovery: React.FC = () => {
+  const dispatch = useDispatch();
+  const { user, isAuthenticated, accessToken: storeAccessToken } = useSelector((state: RootState) => state.auth);
+  
+  useEffect(() => {
+    // 从localStorage获取accessToken
+    const localAccessToken = localStorage.getItem('accessToken');
+    
+    // 调试信息
+    console.log('UserStateRecovery - Token check:', {
+      localAccessToken: !!localAccessToken,
+      localAccessTokenValue: localAccessToken ? localAccessToken.substring(0, 20) + '...' : null,
+      storeAccessToken: !!storeAccessToken,
+      user: !!user,
+      isAuthenticated
+    });
+    
+    // 如果localStorage中有accessToken但Redux store中没有用户信息，则获取用户信息
+    if (localAccessToken && !user) {
+      console.log('UserStateRecovery - Dispatching fetchUserProfile');
+      dispatch(fetchUserProfile());
+    }
+    
+    // 如果Redux store中有accessToken但localStorage中没有，则清理Redux store状态
+    if (storeAccessToken && !localAccessToken) {
+      console.log('UserStateRecovery - Dispatching logout');
+      dispatch(logout());
+    }
+  }, [dispatch, user, storeAccessToken, isAuthenticated]);
+  
+  return null;
+};
+
 const App: React.FC = () => {
   return (
     <Provider store={store}>
@@ -43,6 +79,7 @@ const App: React.FC = () => {
           <AntdApp>
             <GlobalStyles />
             <AnimatedBackground />
+            <UserStateRecovery />
             <Router>
               <Routes>
                 {/* 管理后台路由 */}
@@ -83,6 +120,7 @@ const App: React.FC = () => {
                         <Route path="/" element={<Layout />}>
                           <Route index element={<HomePage />} />
                           <Route path="files" element={<FileExplorer />} />
+                          <Route path="profile" element={<UserProfile />} />
                           <Route path="profile/:userId" element={<UserProfile />} />
                           
                           {/* 需要认证的路由 */}

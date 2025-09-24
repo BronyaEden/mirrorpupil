@@ -2,6 +2,56 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import AuthController from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { uploadFile, handleUploadError } from '../middleware/upload.js';
+import multer from 'multer';
+
+// 头像上传配置
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads');
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = file.mimetype.split('/')[1];
+      cb(null, 'avatar-' + uniqueSuffix + '.' + ext);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('只允许上传图片文件'), false);
+    }
+  },
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB
+  }
+});
+
+// 背景图上传配置
+const coverUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads');
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = file.mimetype.split('/')[1];
+      cb(null, 'cover-' + uniqueSuffix + '.' + ext);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('只允许上传图片文件'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+});
 
 const router = express.Router();
 
@@ -128,6 +178,34 @@ router.get('/search-users',
     .isInt({ min: 1, max: 50 })
     .withMessage('每页数量必须在1-50之间'),
   AuthController.searchUsers
+);
+
+// 上传头像
+router.post('/upload-avatar',
+  authenticateToken,
+  avatarUpload.single('avatar'),
+  handleUploadError,
+  AuthController.uploadAvatar
+);
+
+// 上传背景图
+router.post('/upload-cover',
+  authenticateToken,
+  coverUpload.single('cover'),
+  handleUploadError,
+  AuthController.uploadCover
+);
+
+// 更新用户名
+router.put('/update-username',
+  authenticateToken,
+  body('username')
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('用户名长度必须在3-30个字符之间')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('用户名只能包含字母、数字和下划线'),
+  AuthController.updateUsername
 );
 
 // 获取用户公开信息

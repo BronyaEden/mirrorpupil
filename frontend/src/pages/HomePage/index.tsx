@@ -694,7 +694,6 @@ const HomePage: React.FC = () => {
       }
     }
     
-    console.log('增强版视觉效果页面加载完成！');
     
     // 初始化视觉效果（不包括鼠标特效，已移至GlobalMouseEffects）
     new StarField();

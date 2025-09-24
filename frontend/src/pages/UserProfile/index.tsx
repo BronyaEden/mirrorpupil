@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   Avatar,
@@ -18,7 +18,8 @@ import {
   Upload,
   message,
   Empty,
-  Spin
+  Spin,
+  Popconfirm
 } from 'antd';
 import {
   UserOutlined,
@@ -31,18 +32,22 @@ import {
   FileOutlined,
   GlobalOutlined,
   EnvironmentOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store';
-import { updateUserProfile } from '../../store/authSlice';
+import { fetchUserProfile, updateUserProfile, uploadAvatar, uploadCover, updateUsername, setTokens, updateUser } from '../../store/authSlice';
 import FileCard from '../../components/FileCard';
 import { User, FileItem } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import authAPI from '../../utils/api/auth';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -67,40 +72,57 @@ const ProfileContainer = styled.div`
   padding: ${props => props.theme.spacing.lg};
 `;
 
-const ProfileHeader = styled(Card)`
-  background: linear-gradient(135deg, 
-    ${props => props.theme.colors.background.secondary} 0%, 
-    ${props => props.theme.colors.background.surface} 100%);
-  border: 1px solid ${props => props.theme.colors.neutral.gray400};
+const ProfileHeader = styled.div<{ coverImage?: string }>`
+  position: relative;
+  height: 300px;
   border-radius: ${props => props.theme.borderRadius.lg};
   margin-bottom: ${props => props.theme.spacing.lg};
+  overflow: hidden;
+  background: ${props => props.coverImage ? `url(${props.coverImage}) center/cover` : `linear-gradient(135deg, ${props.theme.colors.primary.main} 0%, ${props.theme.colors.secondary.main} 100%)`};
   
-  .ant-card-body {
-    padding: ${props => props.theme.spacing.xl};
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
   }
 `;
 
 const ProfileAvatar = styled(Avatar)`
-  border: 4px solid ${props => props.theme.colors.primary.main};
+  border: 4px solid ${props => props.theme.colors.background.surface};
   box-shadow: ${props => props.theme.shadows.glow};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
 const UserInfo = styled.div`
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 2;
+  color: white;
+  
   .user-name {
-    color: ${props => props.theme.colors.text.primary};
     font-size: 2rem;
     font-weight: 700;
     margin: ${props => props.theme.spacing.md} 0 ${props => props.theme.spacing.sm};
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
   
   .user-bio {
-    color: ${props => props.theme.colors.text.secondary};
     font-size: 1.1rem;
     margin-bottom: ${props => props.theme.spacing.md};
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
   
   .user-meta {
-    color: ${props => props.theme.colors.text.secondary};
     font-size: 0.9rem;
     
     .ant-space-item {
@@ -108,6 +130,21 @@ const UserInfo = styled.div`
       align-items: center;
       gap: 4px;
     }
+  }
+`;
+
+const CoverUploadButton = styled(Button)`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
   }
 `;
 
@@ -173,113 +210,137 @@ const EditModal = styled(Modal)`
   }
 `;
 
-// 模拟数据
-const mockUserData: User = {
-  _id: 'user1',
-  username: '示例用户',
-  email: 'user@example.com',
-  avatar: '',
-  bio: '这是一个示例用户的个人简介，展示用户的基本信息和兴趣爱好。',
-  location: '北京市',
-  website: 'https://example.com',
-  followers: [],
-  following: [],
-  followersCount: 128,
-  followingCount: 56,
-  isActive: true,
-  isVerified: true,
-  role: 'user',
-  lastLoginAt: new Date('2024-01-20'),
-  createdAt: new Date('2023-06-15'),
-  updatedAt: new Date('2024-01-20'),
-  preferences: {
-    theme: 'auto',
-    language: 'zh-CN',
-    notifications: {
-      email: true,
-      push: true
-    }
+const UploadModal = styled(Modal)`
+  .ant-modal-content {
+    background: ${props => props.theme.colors.background.secondary};
+    border: 1px solid ${props => props.theme.colors.neutral.gray400};
   }
-};
-
-const mockUserStats: UserStats = {
-  totalFiles: 45,
-  totalViews: 1234,
-  totalDownloads: 567,
-  totalLikes: 89
-};
-
-const mockUserFiles: FileItem[] = [
-  {
-    _id: '1',
-    filename: 'user-file1.jpg',
-    originalName: 'user-file1.jpg',
-    displayName: '用户上传的图片1',
-    description: '这是用户上传的一个示例图片',
-    fileType: 'image',
-    mimeType: 'image/jpeg',
-    fileSize: 1024000,
-    fileSizeFormatted: '1.02 MB',
-    fileUrl: '/uploads/user-file1.jpg',
-    thumbnailUrl: '/uploads/thumb_user-file1.jpg',
-    uploaderId: 'user1',
-    uploader: mockUserData,
-    tags: ['图片', '示例'],
-    category: '图片素材',
-    downloadCount: 25,
-    viewCount: 78,
-    likeCount: 12,
-    likes: [],
-    isPublic: true,
-    isActive: true,
-    accessLevel: 'public',
-    metadata: {
-      width: 1920,
-      height: 1080
-    },
-    processing: {
-      status: 'completed',
-      progress: 100
-    },
-    createdAt: new Date('2024-01-18'),
-    updatedAt: new Date('2024-01-18')
+  
+  .ant-modal-header {
+    background: ${props => props.theme.colors.background.secondary};
+    border-bottom: 1px solid ${props => props.theme.colors.neutral.gray400};
   }
-];
+  
+  .ant-modal-title {
+    color: ${props => props.theme.colors.text.primary};
+  }
+`;
+
+const Dragger = styled(Upload.Dragger)`
+  background: ${props => props.theme.colors.background.surface} !important;
+  border: 1px dashed ${props => props.theme.colors.neutral.gray400} !important;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary.main} !important;
+  }
+`;
 
 const UserProfile: React.FC<UserProfileProps> = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { user: currentUser, loading } = useSelector((state: RootState) => state.auth);
+  const { user: currentUser, loading, isAuthenticated, accessToken } = useSelector((state: RootState) => state.auth);
   
   const [userData, setUserData] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [userFiles, setUserFiles] = useState<FileItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [usernameModalVisible, setUsernameModalVisible] = useState(false);
+  const [uploadType, setUploadType] = useState<'avatar' | 'cover'>('avatar');
   const [editForm] = Form.useForm();
+  const [usernameForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('files');
   
-  const isOwnProfile = currentUser?._id === userId;
+  const isOwnProfile = !userId || (currentUser?._id === userId);
+  
+  // 检查是否正在恢复用户状态
+  const isRestoringUser = !userId && !currentUser && loading;
+  
+  // 检查是否有访问令牌但没有用户信息（可能正在恢复过程中）
+  const isUserRecoveryNeeded = !userId && !currentUser && !!accessToken;
   
   useEffect(() => {
-    // 模拟加载用户数据
+    // 调试信息
+    const localAccessToken = localStorage.getItem('accessToken');
+    console.log('UserProfile useEffect triggered', {
+      userId,
+      currentUser: !!currentUser,
+      isAuthenticated,
+      accessToken: !!accessToken,
+      localAccessToken: !!localAccessToken,
+      localAccessTokenValue: localAccessToken ? localAccessToken.substring(0, 20) + '...' : null,
+      loading,
+      isOwnProfile,
+      isUserRecoveryNeeded
+    });
+    
+    // 如果有本地令牌但没有Redux中的令牌，尝试从localStorage同步
+    if (localAccessToken && !accessToken) {
+      console.log('Syncing accessToken from localStorage to Redux');
+      dispatch(setTokens({
+        accessToken: localAccessToken || '',
+        refreshToken: localStorage.getItem('refreshToken') || ''
+      }));
+    }
+    
     const loadUserData = async () => {
       setDataLoading(true);
-      // 模拟API调用
-      setTimeout(() => {
+      
+      try {
         if (isOwnProfile && currentUser) {
+          // 如果是查看自己的资料，直接使用当前用户数据
+          console.log('Using current user data', currentUser);
           setUserData(currentUser);
+          await loadUserStatsAndFiles(currentUser._id);
+        } else if (userId) {
+          // 如果是查看其他用户的资料
+          console.log('Loading public profile for user', userId);
+          const response = await authAPI.getUserPublicProfile(userId);
+          if (response.data.success) {
+            setUserData(response.data.data.user);
+            await loadUserStatsAndFiles(userId);
+          }
+        } else if (isUserRecoveryNeeded) {
+          // 如果需要恢复用户状态，等待恢复完成
+          console.log('User recovery needed, waiting...');
+          setDataLoading(false);
+          return;
         } else {
-          setUserData(mockUserData);
+          // 如果未登录且没有userId，不进行重定向，而是显示登录提示
+          console.log('Not logged in, showing login prompt');
+          setDataLoading(false);
+          return;
         }
-        setUserStats(mockUserStats);
-        setUserFiles(mockUserFiles);
+      } catch (error: any) {
+        console.error('Error loading user data', error);
+        message.error(error.response?.data?.message || '获取用户信息失败');
+        if (error.response?.status === 404) {
+          navigate('/');
+        }
+      } finally {
         setDataLoading(false);
-      }, 1000);
+      }
     };
     
     loadUserData();
-  }, [userId, currentUser, isOwnProfile]);
+  }, [userId, currentUser, isOwnProfile, isAuthenticated, accessToken, loading, isUserRecoveryNeeded]);
+  
+  const loadUserStatsAndFiles = async (userId: string) => {
+    // 模拟统计数据
+    setUserStats({
+      totalFiles: 15,
+      totalViews: 1234,
+      totalDownloads: 567,
+      totalLikes: 89
+    });
+    
+    // 模拟文件数据
+    setUserFiles([
+      // 这里应该是从API获取的实际文件数据
+    ]);
+  };
   
   const handleEditProfile = () => {
     if (userData) {
@@ -294,8 +355,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   
   const handleSaveProfile = async (values: any) => {
     try {
-      // 这里应该调用实际的API
-      await dispatch(updateUserProfile(values)).unwrap();
+      const response = await dispatch(updateUserProfile(values)).unwrap();
       message.success('资料更新成功！');
       setEditModalVisible(false);
       
@@ -309,7 +369,6 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   };
   
   const handleFollow = async () => {
-    // 实现关注逻辑
     message.info('关注功能待实现');
   };
   
@@ -317,6 +376,97 @@ const UserProfile: React.FC<UserProfileProps> = () => {
     console.log(`${action} file:`, file);
     // 实现文件操作逻辑
   };
+  
+  const handleUploadAvatar = () => {
+    setUploadType('avatar');
+    setUploadModalVisible(true);
+  };
+  
+  const handleUploadCover = () => {
+    setUploadType('cover');
+    setUploadModalVisible(true);
+  };
+  
+  const handleUpload = async (file: any) => {
+    const formData = new FormData();
+    
+    if (uploadType === 'avatar') {
+      formData.append('avatar', file);
+      try {
+        console.log('Uploading avatar...');
+        const response = await dispatch(uploadAvatar(formData)).unwrap();
+        message.success('头像上传成功！');
+        setUploadModalVisible(false);
+        
+        // 更新本地数据
+        if (response && response.avatar) {
+          console.log('Avatar updated, updating local state', response);
+          setUserData(prev => prev ? { ...prev, avatar: response.avatar } : prev);
+          // 同时更新Redux store中的用户信息
+          dispatch(updateUser({ avatar: response.avatar }));
+        }
+      } catch (error: any) {
+        console.error('Avatar upload error:', error);
+        message.error(error || '头像上传失败');
+      }
+    } else {
+      formData.append('cover', file);
+      try {
+        console.log('Uploading cover image...');
+        const response = await dispatch(uploadCover(formData)).unwrap();
+        message.success('背景图上传成功！');
+        setUploadModalVisible(false);
+        
+        // 更新本地数据
+        if (response && response.coverImage) {
+          console.log('Cover image updated, updating local state', response);
+          setUserData(prev => prev ? { ...prev, coverImage: response.coverImage } : prev);
+          // 同时更新Redux store中的用户信息
+          dispatch(updateUser({ coverImage: response.coverImage }));
+        }
+      } catch (error: any) {
+        console.error('Cover image upload error:', error);
+        message.error(error || '背景图上传失败');
+      }
+    }
+    
+    return false;
+  };
+  
+  const handleUpdateUsername = () => {
+    if (userData) {
+      usernameForm.setFieldsValue({
+        username: userData.username
+      });
+      setUsernameModalVisible(true);
+    }
+  };
+  
+  const handleSaveUsername = async (values: any) => {
+    try {
+      await dispatch(updateUsername(values.username)).unwrap();
+      message.success('用户名更新成功！');
+      setUsernameModalVisible(false);
+      
+      // 更新本地数据
+      if (userData) {
+        setUserData({ ...userData, username: values.username });
+      }
+    } catch (error: any) {
+      message.error(error || '用户名更新失败');
+    }
+  };
+  
+  // 如果正在恢复用户状态，显示加载中
+  if (isRestoringUser || isUserRecoveryNeeded) {
+    return (
+      <ProfileContainer>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <Spin size="large" tip="加载中..." />
+        </div>
+      </ProfileContainer>
+    );
+  }
   
   if (dataLoading) {
     return (
@@ -328,10 +478,25 @@ const UserProfile: React.FC<UserProfileProps> = () => {
     );
   }
   
-  if (!userData) {
+  if (!userData && !isOwnProfile) {
     return (
       <ProfileContainer>
         <Empty description="用户不存在" style={{ color: '#B0BEC5', padding: '100px 0' }} />
+      </ProfileContainer>
+    );
+  }
+  
+  // 如果未登录用户访问个人中心页面
+  if (isOwnProfile && !currentUser && !isRestoringUser && !isUserRecoveryNeeded) {
+    return (
+      <ProfileContainer>
+        <Card style={{ textAlign: 'center', padding: '40px' }}>
+          <Title level={3}>请登录以查看个人中心</Title>
+          <Paragraph>您需要登录才能查看和编辑个人资料</Paragraph>
+          <Button type="primary" size="large" onClick={() => navigate('/auth')}>
+            立即登录
+          </Button>
+        </Card>
       </ProfileContainer>
     );
   }
@@ -344,62 +509,69 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         transition={{ duration: 0.5 }}
       >
         {/* 用户信息头部 */}
-        <ProfileHeader>
-          <Row gutter={24} align="middle">
-            <Col xs={24} sm={6} style={{ textAlign: 'center' }}>
-              <ProfileAvatar
-                size={120}
-                src={userData.avatar}
-                icon={<UserOutlined />}
-              />
-            </Col>
+        <ProfileHeader coverImage={userData?.coverImage ? `http://localhost:5000${userData.coverImage}` : undefined}>
+          {isOwnProfile && (
+            <CoverUploadButton 
+              icon={<UploadOutlined />} 
+              onClick={handleUploadCover}
+            >
+              编辑背景图
+            </CoverUploadButton>
+          )}
+          
+          <UserInfo>
+            <ProfileAvatar
+              size={120}
+              src={userData?.avatar ? `http://localhost:5000${userData.avatar}` : undefined}
+              icon={<UserOutlined />}
+              onClick={isOwnProfile ? handleUploadAvatar : undefined}
+            />
             
-            <Col xs={24} sm={12}>
-              <UserInfo>
-                <div className="user-name">
-                  {userData.username}
-                  {userData.isVerified && (
-                    <Tag color="blue" style={{ marginLeft: 8 }}>已验证</Tag>
-                  )}
-                </div>
-                
-                {userData.bio && (
-                  <Paragraph className="user-bio">
-                    {userData.bio}
-                  </Paragraph>
-                )}
-                
-                <Space className="user-meta" split={<Divider type="vertical" />}>
-                  {userData.location && (
-                    <span>
-                      <EnvironmentOutlined />
-                      {userData.location}
-                    </span>
-                  )}
-                  {userData.website && (
-                    <span>
-                      <GlobalOutlined />
-                      <a href={userData.website} target="_blank" rel="noopener noreferrer">
-                        个人网站
-                      </a>
-                    </span>
-                  )}
-                  <span>
-                    <CalendarOutlined />
-                    加入于 {dayjs(userData.createdAt).fromNow()}
-                  </span>
-                </Space>
-              </UserInfo>
-            </Col>
+            <div className="user-name">
+              {userData?.username}
+              {userData?.isVerified && (
+                <Tag color="blue" style={{ marginLeft: 8 }}>已验证</Tag>
+              )}
+            </div>
             
-            <Col xs={24} sm={6} style={{ textAlign: 'right' }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
+            {userData?.bio && (
+              <Paragraph className="user-bio">
+                {userData?.bio}
+              </Paragraph>
+            )}
+            
+            <Space className="user-meta" split={<Divider type="vertical" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />}>
+              {userData?.location && (
+                <span>
+                  <EnvironmentOutlined />
+                  {userData?.location}
+                </span>
+              )}
+              {userData?.website && (
+                <span>
+                  <GlobalOutlined />
+                  <a href={userData?.website} target="_blank" rel="noopener noreferrer" style={{ color: 'white' }}>
+                    个人网站
+                  </a>
+                </span>
+              )}
+              <span>
+                <CalendarOutlined />
+                加入于 {userData?.createdAt ? dayjs(userData.createdAt).fromNow() : ''}
+              </span>
+            </Space>
+          </UserInfo>
+        </ProfileHeader>
+        
+        <Card style={{ marginBottom: 24 }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Space>
                 {isOwnProfile ? (
                   <Button
                     type="primary"
                     icon={<EditOutlined />}
                     onClick={handleEditProfile}
-                    block
                   >
                     编辑资料
                   </Button>
@@ -407,7 +579,6 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                   <Button
                     type="primary"
                     onClick={handleFollow}
-                    block
                   >
                     关注
                   </Button>
@@ -416,15 +587,22 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                 {isOwnProfile && (
                   <Button
                     icon={<SettingOutlined />}
-                    block
+                    onClick={handleUpdateUsername}
                   >
-                    设置
+                    修改用户名
                   </Button>
                 )}
               </Space>
             </Col>
+            
+            <Col>
+              <Space>
+                <Text strong>关注者: {userData?.followersCount || 0}</Text>
+                <Text strong>关注中: {userData?.followingCount || 0}</Text>
+              </Space>
+            </Col>
           </Row>
-        </ProfileHeader>
+        </Card>
         
         {/* 统计数据 */}
         <Row gutter={16} style={{ marginBottom: 24 }}>
@@ -500,14 +678,14 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             )}
           </TabPane>
           
-          <TabPane tab={`关注者 (${userData.followersCount})`} key="followers">
+          <TabPane tab={`关注者 (${userData?.followersCount || 0})`} key="followers">
             <Empty
               description="关注者列表功能待实现"
               style={{ color: '#B0BEC5', padding: '60px 0' }}
             />
           </TabPane>
           
-          <TabPane tab={`关注中 (${userData.followingCount})`} key="following">
+          <TabPane tab={`关注中 (${userData?.followingCount || 0})`} key="following">
             <Empty
               description="关注列表功能待实现"
               style={{ color: '#B0BEC5', padding: '60px 0' }}
@@ -577,6 +755,67 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                 取消
               </Button>
               <Button type="primary" htmlType="submit" loading={loading}>
+                保存
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </EditModal>
+      
+      {/* 上传弹窗 */}
+      <UploadModal
+        title={uploadType === 'avatar' ? '上传头像' : '上传背景图'}
+        open={uploadModalVisible}
+        onCancel={() => setUploadModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <Dragger
+          name={uploadType}
+          showUploadList={false}
+          beforeUpload={handleUpload}
+          accept="image/*"
+        >
+          <p className="ant-upload-drag-icon">
+            <UploadOutlined />
+          </p>
+          <p className="ant-upload-text">
+            点击或拖拽文件到此区域上传
+          </p>
+          <p className="ant-upload-hint">
+            {uploadType === 'avatar' 
+              ? '支持JPG、PNG、GIF格式，文件大小不超过2MB' 
+              : '支持JPG、PNG、GIF格式，文件大小不超过5MB'}
+          </p>
+        </Dragger>
+      </UploadModal>
+      
+      {/* 用户名修改弹窗 */}
+      <EditModal
+        title="修改用户名"
+        open={usernameModalVisible}
+        onCancel={() => setUsernameModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={usernameForm}
+          layout="vertical"
+          onFinish={handleSaveUsername}
+        >
+          <Form.Item
+            name="username"
+            label="用户名"
+            rules={[{ required: true, message: '请输入用户名' }]}
+          >
+            <Input placeholder="请输入新的用户名" />
+          </Form.Item>
+          <Form.Item>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={() => setUsernameModalVisible(false)}>
+                取消
+              </Button>
+              <Button type="primary" htmlType="submit">
                 保存
               </Button>
             </Space>

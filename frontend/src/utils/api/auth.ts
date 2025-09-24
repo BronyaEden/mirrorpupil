@@ -42,6 +42,30 @@ const authAPI = {
   getUserPublicProfile: (userId: string) => 
     api.get(`/auth/users/${userId}`),
 
+  // 上传头像
+  uploadAvatar: (formData: FormData) => {
+    console.log('Uploading avatar to /auth/upload-avatar');
+    return api.post('/auth/upload-avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // 上传背景图
+  uploadCover: (formData: FormData) => {
+    console.log('Uploading cover to /auth/upload-cover');
+    return api.post('/auth/upload-cover', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // 更新用户名
+  updateUsername: (username: string) => 
+    api.put('/auth/update-username', { username }),
+
   // 登出
   logout: () => 
     api.post('/auth/logout'),

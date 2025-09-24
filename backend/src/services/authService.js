@@ -150,10 +150,24 @@ class AuthService {
     return user;
   }
   
+  // 检查用户名是否存在
+  async checkUsernameExists(username, excludeUserId = null) {
+    const query = { username };
+    
+    // 如果提供了排除的用户ID，则排除该用户
+    if (excludeUserId) {
+      query._id = { $ne: excludeUserId };
+    }
+    
+    const existingUser = await User.findOne(query);
+    return existingUser;
+  }
+
   // 更新用户信息
   async updateProfile(userId, updateData) {
+    console.log('Updating user profile', userId, updateData);
     const allowedUpdates = [
-      'avatar', 'bio', 'location', 'website', 'preferences'
+      'avatar', 'bio', 'location', 'website', 'preferences', 'coverImage'
     ];
     
     const updates = {};
@@ -162,6 +176,8 @@ class AuthService {
         updates[key] = updateData[key];
       }
     });
+    
+    console.log('Filtered updates', updates);
     
     const user = await User.findByIdAndUpdate(
       userId,
@@ -173,6 +189,7 @@ class AuthService {
       throw new Error('用户不存在');
     }
     
+    console.log('Updated user', user.coverImage);
     return user;
   }
   

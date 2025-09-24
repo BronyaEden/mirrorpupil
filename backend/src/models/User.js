@@ -31,6 +31,10 @@ const userSchema = new Schema({
     type: String,
     default: ''
   },
+  coverImage: {
+    type: String,
+    default: ''
+  },
   bio: {
     type: String,
     maxlength: [500, '个人简介不能超过500个字符'],
