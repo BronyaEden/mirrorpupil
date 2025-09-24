@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layout,
   List,
@@ -10,12 +10,17 @@ import {
   Card,
   Badge,
   Empty,
-  Spin
+  Spin,
+  Dropdown,
+  Menu,
+  message
 } from 'antd';
 import {
   SendOutlined,
   UserOutlined,
-  PlusOutlined
+  PlusOutlined,
+  CopyOutlined,
+  CommentOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
@@ -23,6 +28,10 @@ import { Conversation, Message, User } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { fetchConversations, fetchMessages, sendMessage, setCurrentConversation, clearMessages } from '../../store/chatSlice';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -39,13 +48,32 @@ const ChatLayout = styled(Layout)`
   background: transparent;
 `;
 
+const MessageActions = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  
+  .ant-btn {
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+`;
+
+const MessageBubbleWrapper = styled.div`
+  &:hover ${MessageActions} {
+    opacity: 1;
+  }
+`;
+
 const ConversationSider = styled(Sider)`
-  background: ${props => props.theme.colors.background.secondary};
-  border-right: 1px solid ${props => props.theme.colors.neutral.gray400};
+  background: #1f2937; /* 替换 theme 引用 */
+  border-right: 1px solid #4b5563; /* 替换 theme 引用 */
 `;
 
 const ChatContent = styled(Content)`
-  background: ${props => props.theme.colors.background.surface};
+  background: #111827; /* 替换 theme 引用 */
   display: flex;
   flex-direction: column;
 `;
@@ -53,166 +81,101 @@ const ChatContent = styled(Content)`
 const MessageList = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: ${props => props.theme.spacing.md};
+  padding: 16px; /* 替换 theme 引用 */
 `;
 
 const MessageInput = styled.div`
-  padding: ${props => props.theme.spacing.md};
-  border-top: 1px solid ${props => props.theme.colors.neutral.gray400};
+  padding: 16px; /* 替换 theme 引用 */
+  border-top: 1px solid #4b5563; /* 替换 theme 引用 */
   display: flex;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 8px; /* 替换 theme 引用 */
 `;
 
 const MessageBubble = styled.div<{ isOwn: boolean }>`
   max-width: 70%;
-  margin: ${props => props.theme.spacing.sm} 0;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.borderRadius.lg};
+  margin: 8px 0; /* 替换 theme 引用 */
+  padding: 8px 16px; /* 替换 theme 引用 */
+  border-radius: 12px; /* 替换 theme 引用 */
   background: ${props => 
     props.isOwn 
-      ? props.theme.colors.primary.main 
-      : props.theme.colors.background.secondary
+      ? '#1890ff' /* 替换 theme 引用 */
+      : '#1f2937' /* 替换 theme 引用 */
   };
   color: ${props => 
     props.isOwn 
       ? 'white' 
-      : props.theme.colors.text.primary
+      : '#d1d5db' /* 替换 theme 引用 */
   };
   align-self: ${props => props.isOwn ? 'flex-end' : 'flex-start'};
 `;
 
-// 模拟数据
-const mockConversations: Conversation[] = [
-  {
-    _id: '1',
-    participants: [
-      {
-        _id: 'user1',
-        username: '张三',
-        email: 'zhangsan@example.com',
-        avatar: '',
-        bio: '',
-        location: '',
-        website: '',
-        followers: [],
-        following: [],
-        followersCount: 0,
-        followingCount: 0,
-        isActive: true,
-        isVerified: false,
-        role: 'user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        preferences: {
-          theme: 'auto',
-          language: 'zh-CN',
-          notifications: { email: true, push: true }
-        }
-      }
-    ],
-    conversationType: 'private',
-    lastMessageTime: new Date('2024-01-20T10:30:00'),
-    lastActivity: new Date('2024-01-20T10:30:00'),
-    isActive: true,
-    participantCount: 2,
-    settings: {
-      allowInvites: true,
-      muteNotifications: false
-    },
-    admins: [],
-    createdBy: 'currentUser',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20')
-  }
-];
-
-const mockMessages: Message[] = [
-  {
-    _id: '1',
-    conversationId: '1',
-    senderId: 'user1',
-    messageType: 'text',
-    content: '你好！最近怎么样？',
-    readBy: [],
-    isEdited: false,
-    isDeleted: false,
-    reactions: [],
-    mentions: [],
-    isSystemMessage: false,
-    isRead: true,
-    readCount: 1,
-    createdAt: new Date('2024-01-20T10:25:00'),
-    updatedAt: new Date('2024-01-20T10:25:00')
-  },
-  {
-    _id: '2',
-    conversationId: '1',
-    senderId: 'currentUser',
-    messageType: 'text',
-    content: '很好啊！你呢？',
-    readBy: [],
-    isEdited: false,
-    isDeleted: false,
-    reactions: [],
-    mentions: [],
-    isSystemMessage: false,
-    isRead: true,
-    readCount: 1,
-    createdAt: new Date('2024-01-20T10:30:00'),
-    updatedAt: new Date('2024-01-20T10:30:00')
-  }
-];
-
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user: currentUser } = useSelector((state: RootState) => state.auth);
+  const { conversations, currentConversation, messages, loading } = useSelector((state: RootState) => state.chat);
+  
   const [messageInput, setMessageInput] = useState('');
-  const [loading, setLoading] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
 
   useEffect(() => {
-    // 模拟加载会话列表
-    setTimeout(() => {
-      setConversations(mockConversations);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    // 加载会话列表
+    dispatch(fetchConversations());
+  }, [dispatch]);
 
   useEffect(() => {
-    // 自动滚动到最新消息
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // 如果URL中有会话ID，且会话列表已加载完成，自动选择该会话并加载消息
+    if (conversationId && conversations.length > 0) {
+      const conversation = conversations.find(conv => conv._id === conversationId);
+      if (conversation) {
+        handleSelectConversation(conversation);
+      }
+    }
+  }, [conversationId, conversations]);
 
   const handleSelectConversation = (conversation: Conversation) => {
-    setSelectedConversation(conversation);
-    // 模拟加载消息
-    setMessages(mockMessages);
+    dispatch(setCurrentConversation(conversation));
+    // 更新URL以反映当前会话
+    navigate(`/chat/${conversation._id}`);
+    // 加载消息
+    dispatch(clearMessages());
+    dispatch(fetchMessages(conversation._id));
   };
 
   const handleSendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation) return;
+    if (!messageInput.trim() || !currentConversation || !currentUser) return;
 
-    const newMessage: Message = {
-      _id: Date.now().toString(),
-      conversationId: selectedConversation._id,
-      senderId: 'currentUser',
-      messageType: 'text',
-      content: messageInput,
-      readBy: [],
-      isEdited: false,
-      isDeleted: false,
-      reactions: [],
-      mentions: [],
-      isSystemMessage: false,
-      isRead: false,
-      readCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    dispatch(sendMessage({ conversationId: currentConversation._id, content: messageInput }))
+      .unwrap()
+      .then(() => {
+        setMessageInput('');
+        setReplyToMessage(null);
+      })
+      .catch((error) => {
+        message.error(error || '发送消息失败');
+      });
+  };
 
-    setMessages(prev => [...prev, newMessage]);
-    setMessageInput('');
+  const handleCopyMessage = (message: Message) => {
+    navigator.clipboard.writeText(message.content || '');
+  };
+
+  const handleReplyToMessage = (message: Message) => {
+    setReplyToMessage(message);
+  };
+
+  const handleMessageAction = (action: string, message: Message) => {
+    switch (action) {
+      case 'copy':
+        handleCopyMessage(message);
+        break;
+      case 'reply':
+        handleReplyToMessage(message);
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -229,7 +192,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             </Button>
           </div>
           
-          {loading ? (
+          {loading && conversations.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 20 }}>
               <Spin tip="加载中..." />
             </div>
@@ -241,7 +204,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                   onClick={() => handleSelectConversation(conversation)}
                   style={{
                     cursor: 'pointer',
-                    backgroundColor: selectedConversation?._id === conversation._id
+                    backgroundColor: currentConversation?._id === conversation._id
                       ? 'rgba(0, 217, 255, 0.1)' : 'transparent'
                   }}
                 >
@@ -261,19 +224,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         </ConversationSider>
 
         <ChatContent>
-          {selectedConversation ? (
+          {currentConversation ? (
             <>
               {/* 聊天头部 */}
               <div style={{
                 padding: 16,
                 borderBottom: '1px solid #434343',
-                background: '#2A3441'
+                background: '#2A3441',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16
               }}>
+                <Button 
+                  type="primary" 
+                  onClick={() => navigate('/messages')}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ← 返回
+                </Button>
                 <Space>
                   <Avatar icon={<UserOutlined />} />
                   <div>
                     <Text strong style={{ color: '#fff' }}>
-                      {selectedConversation.participants[0]?.username}
+                      {currentConversation.participants[0]?.username}
                     </Text>
                     <br />
                     <Text type="secondary" style={{ fontSize: '0.85rem' }}>
@@ -283,33 +256,75 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 </Space>
               </div>
 
+              {/* 回复消息提示 */}
+              {replyToMessage && (
+                <div style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#1a2a3a',
+                  borderBottom: '1px solid #434343',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Text style={{ color: '#888' }}>
+                    回复: {replyToMessage.content?.substring(0, 30)}...
+                  </Text>
+                  <Button 
+                    type="text" 
+                    onClick={() => setReplyToMessage(null)}
+                    style={{ color: '#ff4d4f' }}
+                  >
+                    取消
+                  </Button>
+                </div>
+              )}
+              
               {/* 消息列表 */}
               <MessageList>
-                {messages.map((message) => (
-                  <div
-                    key={message._id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: message.senderId === 'currentUser' ? 'flex-end' : 'flex-start',
-                      marginBottom: 8
-                    }}
-                  >
-                    <MessageBubble isOwn={message.senderId === 'currentUser'}>
-                      {message.content}
-                      <br />
-                      <Text
-                        style={{
-                          fontSize: '0.75rem',
-                          opacity: 0.7,
-                          color: message.senderId === 'currentUser' ? 'white' : '#888'
-                        }}
-                      >
-                        {dayjs(message.createdAt).fromNow()}
-                      </Text>
-                    </MessageBubble>
+                {loading && messages.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20 }}>
+                    <Spin tip="加载消息中..." />
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                ) : (
+                  messages.map((message) => (
+                    <MessageBubbleWrapper
+                      key={message._id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: message.senderId === currentUser?._id ? 'flex-end' : 'flex-start',
+                        marginBottom: 8
+                      }}
+                    >
+                      <MessageBubble isOwn={message.senderId === currentUser?._id}>
+                        {message.content}
+                        <br />
+                        <Text
+                          style={{
+                            fontSize: '0.75rem',
+                            opacity: 0.7,
+                            color: message.senderId === currentUser?._id ? 'white' : '#888'
+                          }}
+                        >
+                          {dayjs(message.createdAt).fromNow()}
+                        </Text>
+                        <MessageActions>
+                          <Button 
+                            type="text" 
+                            icon={<CopyOutlined />}
+                            size="small"
+                            onClick={() => handleMessageAction('copy', message)}
+                          />
+                          <Button 
+                            type="text" 
+                            icon={<CommentOutlined />}
+                            size="small"
+                            onClick={() => handleMessageAction('reply', message)}
+                          />
+                        </MessageActions>
+                      </MessageBubble>
+                    </MessageBubbleWrapper>
+                  ))
+                )}
               </MessageList>
 
               {/* 消息输入 */}

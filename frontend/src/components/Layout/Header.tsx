@@ -326,7 +326,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         )}
         
         <Logo onClick={() => navigate('/')}>
-          文件社交平台
+          镜瞳OVO
         </Logo>
         
         {/* 桌面端导航 */}

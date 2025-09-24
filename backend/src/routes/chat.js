@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, param, query } from 'express-validator';
 import ChatController from '../controllers/chatController.js';
+import AIChatController from '../controllers/aiChatController.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -205,6 +206,48 @@ router.get('/search/messages',
     .withMessage('搜索关键词至少需要2个字符'),
   paginationValidation,
   ChatController.searchMessages
+);
+
+// AI聊天
+const aiChatValidation = [
+  body('message')
+    .trim()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('消息内容长度必须在1-2000个字符之间')
+];
+
+router.post('/ai/messages',
+  authenticateToken,
+  aiChatValidation,
+  AIChatController.chatWithAI
+);
+
+// 获取AI聊天历史
+router.get('/ai/messages',
+  authenticateToken,
+  paginationValidation,
+  AIChatController.getAIChatHistory
+);
+
+// 保存AI聊天消息
+const saveAIChatMessageValidation = [
+  body('content')
+    .trim()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('消息内容长度必须在1-2000个字符之间'),
+  body('isAI')
+    .isBoolean()
+    .withMessage('isAI必须是布尔值'),
+  body('timestamp')
+    .optional()
+    .isISO8601()
+    .withMessage('时间格式不正确')
+];
+
+router.post('/ai/messages/save',
+  authenticateToken,
+  saveAIChatMessageValidation,
+  AIChatController.saveAIChatMessage
 );
 
 export default router;

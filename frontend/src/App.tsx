@@ -12,6 +12,9 @@ import FileExplorer from './pages/FileExplorer';
 import FileUpload from './pages/FileUpload';
 import UserProfile from './pages/UserProfile';
 import ChatInterface from './pages/ChatInterface';
+import MessagesPage from './pages/MessagesPage';
+import AIChatPage from './pages/AIChatPage';  // 添加AI聊天页面导入
+import UserSearch from './pages/UserSearch';
 import AuthPage from './pages/AuthPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -132,6 +135,28 @@ const App: React.FC = () => {
                           <Route path="chat" element={
                             <ProtectedRoute>
                               <ChatInterface />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="chat/:conversationId" element={
+                            <ProtectedRoute>
+                              <ChatInterface />
+                            </ProtectedRoute>
+                          } />
+                          {/* 消息路由 */}
+                          <Route path="messages" element={
+                            <ProtectedRoute>
+                              <MessagesPage />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="ai-chat" element={
+                            <ProtectedRoute>
+                              <AIChatPage />
+                            </ProtectedRoute>
+                          } />
+
+                          <Route path="search" element={
+                            <ProtectedRoute>
+                              <UserSearch />
                             </ProtectedRoute>
                           } />
                         </Route>

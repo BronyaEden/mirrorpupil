@@ -151,7 +151,7 @@ const AdminLogin: React.FC = () => {
               管理员登录
             </Typography.Title>
             <Typography.Text type="secondary">
-              文件社交平台 - 后台管理系统
+              镜瞳OVO - 后台管理系统
             </Typography.Text>
           </LoginHeader>
 

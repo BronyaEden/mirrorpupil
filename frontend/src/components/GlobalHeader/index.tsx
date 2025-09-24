@@ -21,10 +21,14 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
     navigate('/auth');
   };
 
-  const handleSearch = (value: string) => {
+  const handleFileSearch = (value: string) => {
     if (value.trim()) {
       navigate(`/files?search=${encodeURIComponent(value)}`);
     }
+  };
+
+  const handleUserSearch = () => {
+    navigate('/search');
   };
 
   // 创建固定Header的内容
@@ -75,7 +79,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
             animation: 'logo-glow 3s ease-in-out infinite',
           }}
         >
-          文件社交平台
+          镜瞳OVO
         </div>
         
         {/* 导航链接 */}
@@ -83,7 +87,10 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
           {[
             { path: '/', label: '首页', icon: '🏠' },
             { path: '/files', label: '文件', icon: '📁' },
-            ...(isAuthenticated ? [{ path: '/upload', label: '上传', icon: '☁️' }] : []),
+            ...(isAuthenticated ? [
+              { path: '/upload', label: '上传', icon: '☁️' },
+              { path: '/messages', label: '消息', icon: '💬' }  // 添加消息链接
+            ] : []),
             { path: '/profile', label: '个人中心', icon: '👤' }
           ].map(item => (
             <a
@@ -128,12 +135,12 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
       </div>
 
       {/* 中间：搜索框 */}
-      <div style={{ flex: '1', maxWidth: '400px', margin: '0 24px' }}>
+      <div style={{ flex: '1', maxWidth: '400px', margin: '0 24px', display: 'flex', gap: '12px' }}>
         <input
           type="text"
           placeholder="搜索文件..."
           style={{
-            width: '100%',
+            flex: 1,
             padding: '8px 16px',
             background: 'rgba(255, 255, 255, 0.1)',
             border: '1px solid rgba(0, 217, 255, 0.3)',
@@ -155,10 +162,38 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
           }}
           onKeyPress={(e) => {
             if (e.key === 'Enter') {
-              handleSearch(e.currentTarget.value);
+              handleFileSearch(e.currentTarget.value);
             }
           }}
         />
+        <button
+          style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(0, 217, 255, 0.3)',
+            color: 'rgba(255, 255, 255, 0.8)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 255, 255, 0.2)';
+            e.currentTarget.style.borderColor = '#00FFFF';
+            e.currentTarget.style.color = '#00FFFF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+          }}
+          onClick={handleUserSearch}
+        >
+          <span>👤</span>
+          搜索用户
+        </button>
       </div>
 
       {/* 右侧：用户操作 */}

@@ -51,7 +51,7 @@ const Footer: React.FC = () => {
         
         <div>
           <Text type="secondary">
-            © 2024 文件管理社交平台. All rights reserved.
+            © 2024 镜瞳OVO. All rights reserved.
           </Text>
         </div>
         

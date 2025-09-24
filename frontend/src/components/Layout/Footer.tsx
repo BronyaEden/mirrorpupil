@@ -235,7 +235,7 @@ const Footer: React.FC = () => {
             gap="16px"
           >
             <div>
-              © 2024 文件社交平台. 保留所有权利.
+              © 2024 镜瞳OVO. 保留所有权利.
             </div>
             {!isMobile && (
               <Space split={<Divider type="vertical" style={{ background: 'rgba(255,255,255,0.3)' }} />}>

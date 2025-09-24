@@ -1,16 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
+import chatReducer from './chatSlice';
 // import filesReducer from './filesSlice';
 // import usersReducer from './usersSlice';
-// import chatReducer from './chatSlice';
 // import uiReducer from './uiSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    chat: chatReducer,
     // files: filesReducer,
     // users: usersReducer,
-    // chat: chatReducer,
     // ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>

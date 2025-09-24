@@ -9,9 +9,9 @@ const userSchema = new Schema({
     required: [true, '用户名是必填项'],
     unique: true,
     trim: true,
-    minlength: [3, '用户名至少需要3个字符'],
+    minlength: [1, '用户名至少需要1个字符'],
     maxlength: [30, '用户名不能超过30个字符'],
-    match: [/^[a-zA-Z0-9_]+$/, '用户名只能包含字母、数字和下划线']
+    match: [/^[\w\u4e00-\u9fa5]+$/, '用户名只能包含中文、字母、数字和下划线']
   },
   email: {
     type: String,
@@ -37,7 +37,7 @@ const userSchema = new Schema({
   },
   bio: {
     type: String,
-    maxlength: [500, '个人简介不能超过500个字符'],
+    maxlength: [300, '个人简介不能超过300个字符'],
     default: ''
   },
   location: {

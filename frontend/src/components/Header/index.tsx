@@ -90,9 +90,9 @@ const Header: React.FC = () => {
             label: <Link to="/upload">文件上传</Link>,
           },
           {
-            key: '/chat',
+            key: '/messages',
             icon: <MessageOutlined />,
-            label: <Link to="/chat">聊天</Link>,
+            label: <Link to="/messages">消息</Link>,
           },
         ]
       : []),
@@ -129,7 +129,7 @@ const Header: React.FC = () => {
 
   return (
     <StyledHeader>
-      <Logo>文件社交平台</Logo>
+      <Logo>镜瞳OVO</Logo>
       
       <NavMenu
         mode="horizontal"

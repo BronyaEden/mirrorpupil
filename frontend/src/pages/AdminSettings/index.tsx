@@ -82,7 +82,7 @@ const AdminSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<SystemSettings>({
     general: {
-      siteName: '文件社交平台',
+      siteName: '镜瞳OVO',
       siteDescription: '集文件管理与社交互动于一体的现代化平台',
       allowRegistration: true,
       defaultUserRole: 'user'

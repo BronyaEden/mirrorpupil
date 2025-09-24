@@ -59,10 +59,10 @@ const router = express.Router();
 const registerValidation = [
   body('username')
     .trim()
-    .isLength({ min: 3, max: 30 })
-    .withMessage('用户名长度必须在3-30个字符之间')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('用户名只能包含字母、数字和下划线'),
+    .isLength({ min: 1, max: 30 })
+    .withMessage('用户名长度必须在1-30个字符之间')
+    .matches(/^[\w\u4e00-\u9fa5]+$/)
+    .withMessage('用户名只能包含中文、字母、数字和下划线'),
   body('email')
     .isEmail()
     .normalizeEmail()
@@ -90,8 +90,8 @@ const updateProfileValidation = [
   body('bio')
     .optional()
     .trim()
-    .isLength({ max: 500 })
-    .withMessage('个人简介不能超过500个字符'),
+    .isLength({ max: 300 })
+    .withMessage('个人简介不能超过300个字符'),
   body('location')
     .optional()
     .trim()
@@ -99,8 +99,9 @@ const updateProfileValidation = [
     .withMessage('所在地不能超过100个字符'),
   body('website')
     .optional()
-    .isURL()
-    .withMessage('网站地址必须是有效的URL')
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('网站地址不能超过200个字符')
 ];
 
 const changePasswordValidation = [
@@ -201,10 +202,10 @@ router.put('/update-username',
   authenticateToken,
   body('username')
     .trim()
-    .isLength({ min: 3, max: 30 })
-    .withMessage('用户名长度必须在3-30个字符之间')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('用户名只能包含字母、数字和下划线'),
+    .isLength({ min: 1, max: 30 })
+    .withMessage('用户名长度必须在1-30个字符之间')
+    .matches(/^[\w\u4e00-\u9fa5]+$/)
+    .withMessage('用户名只能包含中文、字母、数字和下划线'),
   AuthController.updateUsername
 );
 

@@ -21,6 +21,7 @@ import {
   Spin,
   Popconfirm
 } from 'antd';
+import ImageCropper from '../../components/ImageCropper';
 import {
   UserOutlined,
   SettingOutlined,
@@ -35,7 +36,8 @@ import {
   CalendarOutlined,
   PlusOutlined,
   DeleteOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  MessageOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
@@ -120,6 +122,7 @@ const UserInfo = styled.div`
     font-size: 1.1rem;
     margin-bottom: ${props => props.theme.spacing.md};
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    color: #ccc; /* 浅灰色 */
   }
   
   .user-meta {
@@ -252,6 +255,12 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   const [editForm] = Form.useForm();
   const [usernameForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('files');
+  
+  // 裁剪相关状态
+  const [cropModalVisible, setCropModalVisible] = useState(false);
+  const [tempAvatarSrc, setTempAvatarSrc] = useState('');
+  const [tempCoverSrc, setTempCoverSrc] = useState('');
+  const [isCroppingCover, setIsCroppingCover] = useState(false);
   
   const isOwnProfile = !userId || (currentUser?._id === userId);
   
@@ -388,34 +397,41 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   };
   
   const handleUpload = async (file: any) => {
-    const formData = new FormData();
-    
-    if (uploadType === 'avatar') {
-      formData.append('avatar', file);
-      try {
-        console.log('Uploading avatar...');
-        const response = await dispatch(uploadAvatar(formData)).unwrap();
-        message.success('头像上传成功！');
-        setUploadModalVisible(false);
-        
-        // 更新本地数据
-        if (response && response.avatar) {
-          console.log('Avatar updated, updating local state', response);
-          setUserData(prev => prev ? { ...prev, avatar: response.avatar } : prev);
-          // 同时更新Redux store中的用户信息
-          dispatch(updateUser({ avatar: response.avatar }));
-        }
-      } catch (error: any) {
-        console.error('Avatar upload error:', error);
-        message.error(error || '头像上传失败');
+    // 读取文件并显示裁剪模态框
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (uploadType === 'avatar') {
+        setTempAvatarSrc(e.target?.result as string);
+      } else {
+        setTempCoverSrc(e.target?.result as string);
+        setIsCroppingCover(true);
       }
-    } else {
-      formData.append('cover', file);
-      try {
-        console.log('Uploading cover image...');
+      setUploadModalVisible(false);
+      setCropModalVisible(true);
+    };
+    reader.readAsDataURL(file);
+    
+    return false;
+  };
+  
+  // 处理裁剪完成
+  const handleCropComplete = async (croppedImage: string) => {
+    setCropModalVisible(false);
+    
+    try {
+      // 将裁剪后的图片转换为Blob并上传
+      const blob = await fetch(croppedImage).then(res => res.blob());
+      
+      if (isCroppingCover) {
+        // 处理背景图
+        const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+        
+        const formData = new FormData();
+        formData.append('cover', file);
+        
+        console.log('Uploading cropped cover image...');
         const response = await dispatch(uploadCover(formData)).unwrap();
         message.success('背景图上传成功！');
-        setUploadModalVisible(false);
         
         // 更新本地数据
         if (response && response.coverImage) {
@@ -424,13 +440,32 @@ const UserProfile: React.FC<UserProfileProps> = () => {
           // 同时更新Redux store中的用户信息
           dispatch(updateUser({ coverImage: response.coverImage }));
         }
-      } catch (error: any) {
-        console.error('Cover image upload error:', error);
-        message.error(error || '背景图上传失败');
+        
+        // 重置状态
+        setIsCroppingCover(false);
+      } else {
+        // 处理头像
+        const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+        
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        console.log('Uploading cropped avatar...');
+        const response = await dispatch(uploadAvatar(formData)).unwrap();
+        message.success('头像上传成功！');
+        
+        // 更新本地数据
+        if (response && response.avatar) {
+          console.log('Avatar updated, updating local state', response);
+          setUserData(prev => prev ? { ...prev, avatar: response.avatar } : prev);
+          // 同时更新Redux store中的用户信息
+          dispatch(updateUser({ avatar: response.avatar }));
+        }
       }
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      message.error(error.message || '图片上传失败');
     }
-    
-    return false;
   };
   
   const handleUpdateUsername = () => {
@@ -576,12 +611,20 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                     编辑资料
                   </Button>
                 ) : (
-                  <Button
-                    type="primary"
-                    onClick={handleFollow}
-                  >
-                    关注
-                  </Button>
+                  <>
+                    <Button
+                      type="primary"
+                      onClick={handleFollow}
+                    >
+                      关注
+                    </Button>
+                    <Button
+                      icon={<MessageOutlined />}
+                      onClick={() => navigate('/messages')}
+                    >
+                      聊天
+                    </Button>
+                  </>
                 )}
                 
                 {isOwnProfile && (
@@ -721,7 +764,7 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             <TextArea
               rows={3}
               placeholder="介绍一下自己..."
-              maxLength={500}
+              maxLength={300}
               showCount
             />
           </Form.Item>
@@ -733,19 +776,18 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             <Input
               placeholder="输入您的所在地"
               prefix={<EnvironmentOutlined />}
+              maxLength={100}
             />
           </Form.Item>
           
           <Form.Item
             name="website"
             label="个人网站"
-            rules={[
-              { type: 'url', message: '请输入有效的网址' }
-            ]}
           >
             <Input
               placeholder="输入您的个人网站"
               prefix={<GlobalOutlined />}
+              maxLength={200}
             />
           </Form.Item>
           
@@ -789,6 +831,19 @@ const UserProfile: React.FC<UserProfileProps> = () => {
           </p>
         </Dragger>
       </UploadModal>
+      
+      {/* 图片裁剪弹窗 */}
+      <ImageCropper
+        imageSrc={isCroppingCover ? tempCoverSrc : tempAvatarSrc}
+        visible={cropModalVisible}
+        onCancel={() => {
+          setCropModalVisible(false);
+          setIsCroppingCover(false);
+        }}
+        onCropComplete={handleCropComplete}
+        cropType={isCroppingCover ? 'cover' : 'avatar'}
+        coverFillMode="cover" // 默认使用cover模式
+      />
       
       {/* 用户名修改弹窗 */}
       <EditModal

@@ -413,7 +413,7 @@ const AuthPage: React.FC = () => {
               style={{ marginBottom: 16 }}
               rules={[
                 { required: true, message: '请输入用户名' },
-                { min: 3, message: '用户名至少3个字符' },
+                { min: 1, message: '用户名至少1个字符' },
                 { max: 30, message: '用户名不能超过30个字符' },
               ]}
             >

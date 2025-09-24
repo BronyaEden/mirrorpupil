@@ -167,7 +167,7 @@ class AuthService {
   async updateProfile(userId, updateData) {
     console.log('Updating user profile', userId, updateData);
     const allowedUpdates = [
-      'avatar', 'bio', 'location', 'website', 'preferences', 'coverImage'
+      'avatar', 'bio', 'location', 'website', 'preferences', 'coverImage', 'username'
     ];
     
     const updates = {};
