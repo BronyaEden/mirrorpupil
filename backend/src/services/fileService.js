@@ -50,10 +50,12 @@ class FileService {
     });
 
     // 如果是图片，生成缩略图
-    if (fileType === 'image' && buffer) {
+    if (fileType === 'image' && buffer && buffer.length > 0) {
       try {
+        console.log('开始生成缩略图:', filename);
         const thumbnailFilename = `thumb_${filename}`;
-        const thumbnailPath = path.join('uploads', thumbnailFilename);
+        const thumbnailPath = path.join(process.cwd(), 'uploads', thumbnailFilename);
+        console.log('缩略图路径:', thumbnailPath);
         
         await sharp(buffer)
           .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
@@ -61,6 +63,7 @@ class FileService {
           .toFile(thumbnailPath);
           
         file.thumbnailUrl = `/uploads/${thumbnailFilename}`;
+        console.log('缩略图生成成功:', file.thumbnailUrl);
         
         // 获取图片元数据
         const metadata = await sharp(buffer).metadata();
@@ -71,6 +74,8 @@ class FileService {
       } catch (error) {
         console.error('生成缩略图失败:', error);
       }
+    } else {
+      console.log('不生成缩略图 - 文件类型:', fileType, '缓冲区大小:', buffer ? buffer.length : '无缓冲区');
     }
 
     // 生成分享链接（如果需要）
@@ -82,6 +87,9 @@ class FileService {
     
     // 填充上传者信息
     await file.populate('uploaderId', 'username avatar');
+    
+    // 更新用户文件统计
+    await this.updateUserFileStats(userId);
     
     return file;
   }
@@ -223,6 +231,9 @@ class FileService {
     // 增加下载次数
     await file.incrementDownload();
     
+    // 更新用户文件统计
+    await this.updateUserFileStats(file.uploaderId);
+    
     return {
       file,
       filePath,
@@ -243,12 +254,18 @@ class FileService {
       throw new Error('无权删除此文件');
     }
     
+    // 保存上传者ID用于后续更新统计
+    const uploaderId = file.uploaderId;
+    
     // 软删除
     file.isActive = false;
     await file.save();
     
     // 删除物理文件（异步进行，不影响响应）
     this.deletePhysicalFile(file.filename, file.thumbnailUrl);
+    
+    // 更新用户文件统计
+    await this.updateUserFileStats(uploaderId);
     
     return { message: '文件删除成功' };
   }
@@ -299,6 +316,9 @@ class FileService {
     
     await file.toggleLike(userId);
     
+    // 更新用户文件统计
+    await this.updateUserFileStats(file.uploaderId);
+    
     return {
       isLiked: file.isLikedBy(userId),
       likeCount: file.likeCount
@@ -330,8 +350,9 @@ class FileService {
 
   // 获取用户的文件统计
   async getUserFileStats(userId) {
-    const stats = await File.aggregate([
-      { $match: { uploaderId: mongoose.Types.ObjectId(userId), isActive: true } },
+    // 按文件类型分组统计
+    const byType = await File.aggregate([
+      { $match: { uploaderId: userId, isActive: true } },
       {
         $group: {
           _id: '$fileType',
@@ -341,20 +362,35 @@ class FileService {
       }
     ]);
     
+    // 获取各种统计数据
     const totalFiles = await File.countDocuments({ 
       uploaderId: userId, 
       isActive: true 
     });
     
-    const totalSize = await File.aggregate([
-      { $match: { uploaderId: mongoose.Types.ObjectId(userId), isActive: true } },
-      { $group: { _id: null, total: { $sum: '$fileSize' } } }
+    // 计算总浏览量、下载量和点赞数
+    const stats = await File.aggregate([
+      { $match: { uploaderId: userId, isActive: true } },
+      {
+        $group: {
+          _id: null,
+          totalViews: { $sum: '$viewCount' },
+          totalDownloads: { $sum: '$downloadCount' },
+          totalLikes: { $sum: '$likeCount' }
+        }
+      }
     ]);
+    
+    const totalViews = stats[0]?.totalViews || 0;
+    const totalDownloads = stats[0]?.totalDownloads || 0;
+    const totalLikes = stats[0]?.totalLikes || 0;
     
     return {
       totalFiles,
-      totalSize: totalSize[0]?.total || 0,
-      byType: stats
+      totalViews,
+      totalDownloads,
+      totalLikes,
+      byType
     };
   }
 
@@ -415,6 +451,22 @@ class FileService {
     } catch (error) {
       console.error('删除物理文件失败:', error);
     }
+  }
+  
+  // 更新用户文件统计信息
+  async updateUserFileStats(userId) {
+    const stats = await this.getUserFileStats(userId);
+    
+    await User.findByIdAndUpdate(userId, {
+      fileStats: {
+        totalFiles: stats.totalFiles,
+        totalViews: stats.totalViews,
+        totalDownloads: stats.totalDownloads,
+        totalLikes: stats.totalLikes
+      }
+    });
+    
+    return stats;
   }
 }
 

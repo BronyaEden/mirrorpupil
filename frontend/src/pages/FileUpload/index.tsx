@@ -11,7 +11,7 @@ import {
   Space, 
   Tag, 
   Progress,
-  message
+  Modal
 } from 'antd';
 import { 
   InboxOutlined, 
@@ -153,6 +153,7 @@ const FileUpload: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleUpload = async (values: FileUploadForm) => {
     if (!uploadFile) {
@@ -187,15 +188,21 @@ const FileUpload: React.FC = () => {
       });
 
       if (response.data.success) {
-        message.success('上传成功');
+        // 显示自定义成功弹窗
+        setShowSuccessModal(true);
         
-        // 重置表单
-        form.resetFields();
-        setUploadFile(null);
-        setTags([]);
-        setTagInput('');
-        setUploading(false);
-        setUploadProgress(0);
+        // 一秒后自动关闭弹窗
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          
+          // 重置表单
+          form.resetFields();
+          setUploadFile(null);
+          setTags([]);
+          setTagInput('');
+          setUploading(false);
+          setUploadProgress(0);
+        }, 1000);
       } else {
         throw new Error(response.data.message || '上传失败');
       }
@@ -403,6 +410,24 @@ const FileUpload: React.FC = () => {
           </Form>
         </StyledCard>
       </motion.div>
+      
+      {/* 自定义成功弹窗 */}
+      <Modal
+        open={showSuccessModal}
+        footer={null}
+        closable={false}
+        centered
+        width={300}
+      >
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '20px', 
+          fontSize: '18px',
+          color: '#00D9FF'
+        }}>
+          上传成功
+        </div>
+      </Modal>
     </UploadContainer>
   );
 };

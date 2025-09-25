@@ -58,6 +58,25 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
+  // 添加文件统计信息字段
+  fileStats: {
+    totalFiles: {
+      type: Number,
+      default: 0
+    },
+    totalViews: {
+      type: Number,
+      default: 0
+    },
+    totalDownloads: {
+      type: Number,
+      default: 0
+    },
+    totalLikes: {
+      type: Number,
+      default: 0
+    }
+  },
   isActive: {
     type: Boolean,
     default: true

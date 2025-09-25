@@ -781,7 +781,7 @@ const HomePage: React.FC = () => {
         <FadeInSection>
           <HeroSection>
             <HeroTitle level={1}>
-              文件管理 · 社交互动
+              镜瞳OVO.文件与社交
             </HeroTitle>
             <HeroSubtitle>
               集文件管理与社交互动于一体的现代化平台，为您提供安全便捷的文件存储分享服务和实时社交体验
