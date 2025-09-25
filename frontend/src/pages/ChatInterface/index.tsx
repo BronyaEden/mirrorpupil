@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Layout,
   List,
@@ -164,7 +164,9 @@ const ChatContent = styled(Content)`
   border-radius: 0 14px 14px 0;
 `;
 
-const MessageList = styled.div`
+const MessageList = styled.div.attrs({
+  className: 'message-list-container'
+})`
   flex: 1;
   overflow-y: auto;
   padding: 20px;
@@ -359,6 +361,54 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   
   const [messageInput, setMessageInput] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  // 滚动到消息列表底部的函数
+  const scrollToBottom = (smooth = false) => {
+    if (messageListRef.current) {
+      if (smooth) {
+        messageListRef.current.scrollTo({
+          top: messageListRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+      }
+    }
+  };
+
+  // 检查用户是否在底部附近
+  const isUserNearBottom = () => {
+    if (!messageListRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = messageListRef.current;
+    const threshold = 50; // 阈值，单位像素
+    return scrollTop + clientHeight + threshold >= scrollHeight;
+  };
+
+  // 当消息列表更新时，自动滚动到底部
+  useEffect(() => {
+    // 使用 setTimeout 确保 DOM 已更新
+    setTimeout(() => {
+      // 总是滚动到底部
+      scrollToBottom();
+    }, 100);
+  }, [messages]);
+
+  // 页面加载完成后立即滚动到底部
+  useEffect(() => {
+    setTimeout(() => {
+      scrollToBottom();
+    }, 200);
+  }, []);
+
+  // 当切换会话时，也滚动到底部
+  useEffect(() => {
+    if (currentConversation) {
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [currentConversation]);
 
   useEffect(() => {
     // 加载会话列表
@@ -411,6 +461,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         console.log('ID比较结果 (字符串比较):', String(senderIdToCompare) === String(currentUser._id));
         setMessageInput('');
         setReplyToMessage(null);
+        // 发送成功后总是滚动到底部，使用平滑滚动
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 50);
       })
       .catch((error: any) => {
         message.error(error || '发送消息失败');
@@ -708,7 +762,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               )}
               
               {/* 消息列表 */}
-              <MessageList>
+              <MessageList ref={messageListRef}>
                 {loading && messages.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 16 }}>
                     <Spin tip="加载消息中..." />
