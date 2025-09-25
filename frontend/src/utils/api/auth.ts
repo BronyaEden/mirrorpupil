@@ -34,6 +34,14 @@ const authAPI = {
   unfollowUser: (userId: string) => 
     api.delete(`/auth/follow/${userId}`),
 
+  // 获取用户的关注者列表
+  getUserFollowers: (userId: string, page = 1, limit = 20) => 
+    api.get(`/auth/users/${userId}/followers`, { params: { page, limit } }),
+
+  // 获取用户的关注中列表
+  getUserFollowing: (userId: string, page = 1, limit = 20) => 
+    api.get(`/auth/users/${userId}/following`, { params: { page, limit } }),
+
   // 搜索用户
   searchUsers: (query: string, page = 1, limit = 20) => 
     api.get('/auth/search-users', { params: { q: query, page, limit } }),

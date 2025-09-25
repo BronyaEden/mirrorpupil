@@ -26,6 +26,8 @@ export interface User {
       push: boolean;
     };
   };
+  // 添加isFollowing字段，用于表示当前用户是否关注此用户
+  isFollowing?: boolean;
 }
 
 export interface FileItem {
@@ -268,3 +270,5 @@ export interface FileUploadForm {
   isPublic: boolean;
   accessLevel: 'public' | 'private' | 'friends' | 'link';
 }
+
+

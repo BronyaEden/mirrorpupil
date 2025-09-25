@@ -45,6 +45,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store';
 import { fetchUserProfile, updateUserProfile, uploadAvatar, uploadCover, updateUsername, setTokens, updateUser } from '../../store/authSlice';
 import FileCard from '../../components/FileCard';
+import FollowList from '../../components/FollowList';
 import { User, FileItem } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -68,6 +69,13 @@ interface UserStats {
   totalViews: number;
   totalDownloads: number;
   totalLikes: number;
+}
+
+// 添加一个新的接口来表示关注状态
+interface FollowStatus {
+  isFollowing: boolean;
+  followersCount: number;
+  followingCount: number;
 }
 
 const ProfileContainer = styled.div`
@@ -289,6 +297,13 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   const [usernameForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('files');
   
+  // 添加关注状态
+  const [followStatus, setFollowStatus] = useState<FollowStatus>({
+    isFollowing: false,
+    followersCount: 0,
+    followingCount: 0
+  });
+  
   // 裁剪相关状态
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const [tempAvatarSrc, setTempAvatarSrc] = useState('');
@@ -335,13 +350,24 @@ const UserProfile: React.FC<UserProfileProps> = () => {
           // 如果是查看自己的资料，直接使用当前用户数据
           console.log('Using current user data', currentUser);
           setUserData(currentUser);
+          setFollowStatus({
+            isFollowing: false,
+            followersCount: currentUser.followersCount || 0,
+            followingCount: currentUser.followingCount || 0
+          });
           await loadUserStatsAndFiles(currentUser._id);
         } else if (userId) {
           // 如果是查看其他用户的资料
           console.log('Loading public profile for user', userId);
           const response = await authAPI.getUserPublicProfile(userId);
           if (response.data.success) {
-            setUserData(response.data.data.user);
+            const userProfile = response.data.data.user;
+            setUserData(userProfile);
+            setFollowStatus({
+              isFollowing: currentUser?.following?.includes(userId) || false,
+              followersCount: userProfile.followersCount || 0,
+              followingCount: userProfile.followingCount || 0
+            });
             await loadUserStatsAndFiles(userId);
           }
         } else if (isUserRecoveryNeeded) {
@@ -411,7 +437,63 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   };
   
   const handleFollow = async () => {
-    message.info('关注功能待实现');
+    if (!userData || !currentUser) {
+      message.info('请先登录');
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      const response = await authAPI.followUser(userData._id);
+      if (response.data.success) {
+        message.success('关注成功');
+        // 更新关注状态
+        setFollowStatus(prev => ({
+          ...prev,
+          isFollowing: true,
+          followersCount: prev.followersCount + 1
+        }));
+        // 更新当前用户信息中的following列表
+        if (currentUser) {
+          dispatch(updateUser({
+            following: [...(currentUser.following || []), userData._id]
+          }));
+        }
+      }
+    } catch (error: any) {
+      console.error('关注失败:', error);
+      message.error(error.response?.data?.message || '关注失败');
+    }
+  };
+  
+  const handleUnfollow = async () => {
+    if (!userData || !currentUser) {
+      message.info('请先登录');
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      const response = await authAPI.unfollowUser(userData._id);
+      if (response.data.success) {
+        message.success('取消关注成功');
+        // 更新关注状态
+        setFollowStatus(prev => ({
+          ...prev,
+          isFollowing: false,
+          followersCount: prev.followersCount - 1
+        }));
+        // 更新当前用户信息中的following列表
+        if (currentUser) {
+          dispatch(updateUser({
+            following: (currentUser.following || []).filter(id => id !== userData._id)
+          }));
+        }
+      }
+    } catch (error: any) {
+      console.error('取消关注失败:', error);
+      message.error(error.response?.data?.message || '取消关注失败');
+    }
   };
   
   const handleChatClick = async () => {
@@ -666,12 +748,28 @@ const UserProfile: React.FC<UserProfileProps> = () => {
                   </Button>
                 ) : (
                   <>
-                    <Button
-                      type="primary"
-                      onClick={handleFollow}
-                    >
-                      关注
-                    </Button>
+                    {followStatus.isFollowing ? (
+                      <Popconfirm
+                        title="确定要取消关注吗？"
+                        onConfirm={handleUnfollow}
+                        okText="确定"
+                        cancelText="取消"
+                      >
+                        <Button
+                          type="default"
+                          danger
+                        >
+                          取消关注
+                        </Button>
+                      </Popconfirm>
+                    ) : (
+                      <Button
+                        type="primary"
+                        onClick={handleFollow}
+                      >
+                        关注
+                      </Button>
+                    )}
                     <ChatButton
                       icon={<MessageOutlined />}
                       onClick={() => handleChatClick()}
@@ -694,8 +792,8 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             
             <Col>
               <Space>
-                <Text strong>关注者: {userData?.followersCount || 0}</Text>
-                <Text strong>关注中: {userData?.followingCount || 0}</Text>
+                <Text strong>关注者: {followStatus.followersCount}</Text>
+                <Text strong>关注中: {followStatus.followingCount}</Text>
               </Space>
             </Col>
           </Row>
@@ -775,18 +873,16 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             )}
           </TabPane>
           
-          <TabPane tab={`关注者 (${userData?.followersCount || 0})`} key="followers">
-            <Empty
-              description="关注者列表功能待实现"
-              style={{ color: '#B0BEC5', padding: '60px 0' }}
-            />
+          <TabPane tab={`关注者 (${followStatus.followersCount})`} key="followers">
+            {userData && (
+              <FollowList userId={userData._id} type="followers" />
+            )}
           </TabPane>
           
-          <TabPane tab={`关注中 (${userData?.followingCount || 0})`} key="following">
-            <Empty
-              description="关注列表功能待实现"
-              style={{ color: '#B0BEC5', padding: '60px 0' }}
-            />
+          <TabPane tab={`关注中 (${followStatus.followingCount})`} key="following">
+            {userData && (
+              <FollowList userId={userData._id} type="following" />
+            )}
           </TabPane>
           
           <TabPane tab="点赞的文件" key="liked">

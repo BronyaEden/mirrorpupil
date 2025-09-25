@@ -215,4 +215,16 @@ router.get('/users/:userId',
   AuthController.getUserPublicProfile
 );
 
+// 获取用户的关注者列表
+router.get('/users/:userId/followers', 
+  param('userId').isMongoId().withMessage('无效的用户ID'),
+  AuthController.getUserFollowers
+);
+
+// 获取用户的关注中列表
+router.get('/users/:userId/following', 
+  param('userId').isMongoId().withMessage('无效的用户ID'),
+  AuthController.getUserFollowing
+);
+
 export default router;

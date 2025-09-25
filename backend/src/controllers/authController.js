@@ -400,6 +400,56 @@ class AuthController {
       });
     }
   }
+  
+  // 获取用户的关注者列表
+  async getUserFollowers(req, res) {
+    try {
+      const { userId } = req.params;
+      const { page, limit } = req.query;
+      
+      const options = {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 20
+      };
+      
+      const result = await AuthService.getUserFollowers(userId, options);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+  
+  // 获取用户的关注中列表
+  async getUserFollowing(req, res) {
+    try {
+      const { userId } = req.params;
+      const { page, limit } = req.query;
+      
+      const options = {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 20
+      };
+      
+      const result = await AuthService.getUserFollowing(userId, options);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
 }
 
 export default new AuthController();

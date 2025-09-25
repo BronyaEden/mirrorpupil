@@ -318,6 +318,88 @@ class AuthService {
       }
     };
   }
+  
+  // 获取用户的关注者列表
+  async getUserFollowers(userId, options = {}) {
+    const { page = 1, limit = 20 } = options;
+    const skip = (page - 1) * limit;
+    
+    // 查找用户并填充关注者信息
+    const user = await User.findById(userId)
+      .populate({
+        path: 'followers',
+        select: 'username avatar coverImage bio followersCount followingCount createdAt isVerified',
+        options: {
+          skip: skip,
+          limit: limit,
+          sort: { followersCount: -1, createdAt: -1 }
+        }
+      });
+    
+    if (!user) {
+      throw new Error('用户不存在');
+    }
+    
+    // 获取关注者总数
+    const total = user.followers.length;
+    
+    // 确保返回的头像和背景图URL是完整的
+    const followersWithFullUrls = user.followers.map(follower => {
+      const followerObj = follower.toObject();
+      return followerObj;
+    });
+    
+    return {
+      users: followersWithFullUrls,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+  
+  // 获取用户的关注中列表
+  async getUserFollowing(userId, options = {}) {
+    const { page = 1, limit = 20 } = options;
+    const skip = (page - 1) * limit;
+    
+    // 查找用户并填充关注中信息
+    const user = await User.findById(userId)
+      .populate({
+        path: 'following',
+        select: 'username avatar coverImage bio followersCount followingCount createdAt isVerified',
+        options: {
+          skip: skip,
+          limit: limit,
+          sort: { followersCount: -1, createdAt: -1 }
+        }
+      });
+    
+    if (!user) {
+      throw new Error('用户不存在');
+    }
+    
+    // 获取关注中总数
+    const total = user.following.length;
+    
+    // 确保返回的头像和背景图URL是完整的
+    const followingWithFullUrls = user.following.map(following => {
+      const followingObj = following.toObject();
+      return followingObj;
+    });
+    
+    return {
+      users: followingWithFullUrls,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
 }
 
 export default new AuthService();
