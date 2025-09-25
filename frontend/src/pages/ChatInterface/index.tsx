@@ -437,28 +437,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const handleSendMessage = () => {
     if (!messageInput.trim() || !currentConversation || !currentUser) return;
 
-    // 添加调试信息
-    console.log('=== 发送消息调试信息 ===');
-    console.log('当前用户ID:', currentUser._id, '类型:', typeof currentUser._id);
-    console.log('消息内容:', messageInput);
 
     dispatch(sendMessage({ conversationId: currentConversation._id, content: messageInput }) as any)
       .unwrap()
       .then((sentMessage: Message) => {
-        console.log('=== 消息发送成功后的调试信息 ===');
-        console.log('发送的消息:', sentMessage);
-        console.log('发送者ID:', sentMessage.senderId, '类型:', typeof sentMessage.senderId);
-        console.log('当前用户ID:', currentUser._id, '类型:', typeof currentUser._id);
         
         // 修复比较逻辑：处理senderId可能是对象的情况
         let senderIdToCompare = sentMessage.senderId;
         if (typeof sentMessage.senderId === 'object' && sentMessage.senderId !== null && '_id' in sentMessage.senderId) {
           senderIdToCompare = (sentMessage.senderId as any)._id;
-          console.log('发送者ID是对象，提取_id字段:', senderIdToCompare);
         }
         
-        console.log('ID比较结果 (直接比较):', senderIdToCompare === currentUser._id);
-        console.log('ID比较结果 (字符串比较):', String(senderIdToCompare) === String(currentUser._id));
         setMessageInput('');
         setReplyToMessage(null);
         // 发送成功后总是滚动到底部，使用平滑滚动
@@ -496,10 +485,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const getOtherParticipant = (conversation: Conversation) => {
     if (!currentUser) return conversation.participants[0] || null;
     
-    // 添加调试信息
-    console.log('=== 获取会话参与者调试信息 ===');
-    console.log('当前用户ID:', currentUser._id);
-    console.log('会话所有参与者:', conversation.participants);
     
     // 修复逻辑：寻找不是当前用户的参与者
     const otherParticipant = conversation.participants.find(
@@ -513,35 +498,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           : currentUser._id;
           
         const isNotCurrentUser = String(participantId) !== String(currentUserId);
-        console.log(`比较参与者 ${participantId} 与当前用户 ${currentUserId}: ${isNotCurrentUser} (是否为其他参与者)`);
+        
         return isNotCurrentUser;
       }
     ) || conversation.participants[0];
     
-    console.log('找到的对方参与者:', otherParticipant);
     return otherParticipant;
   };
 
   // 在消息渲染部分也添加调试信息
   const renderMessage = (message: Message) => {
-    // 调试信息
-    console.log('=== 消息渲染调试信息 ===');
-    console.log('消息对象:', message);
-    console.log('发送者ID:', message.senderId, '类型:', typeof message.senderId);
-    console.log('当前用户ID:', currentUser?._id, '类型:', typeof currentUser?._id);
-    
+
     // 修复比较逻辑：处理senderId可能是对象的情况
     let senderIdToCompare = message.senderId;
     if (typeof message.senderId === 'object' && message.senderId !== null && '_id' in message.senderId) {
       senderIdToCompare = (message.senderId as any)._id;
-      console.log('发送者ID是对象，提取_id字段:', senderIdToCompare);
     }
     
-    console.log('ID比较结果 (直接比较):', senderIdToCompare === currentUser?._id);
-    console.log('ID比较结果 (字符串比较):', String(senderIdToCompare) === String(currentUser?._id));
     
     const isOwnMessage = String(senderIdToCompare) === String(currentUser?._id);
-    console.log('是否为我方消息:', isOwnMessage);
     
     // 获取发送者信息
     let senderInfo = null;
