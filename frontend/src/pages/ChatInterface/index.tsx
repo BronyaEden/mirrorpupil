@@ -74,10 +74,9 @@ const ChatLayout = styled(Layout)`
 `;
 
 const MessageBubble = styled.div<{ isOwn: boolean }>`
-  max-width: 70%;
   margin: 4px 0;
-  padding: 10px 15px;
-  border-radius: 18px;
+  padding: 7px 8px;
+  border-radius: 15px;
   background: ${props => 
     props.isOwn 
       ? 'linear-gradient(135deg, #1890ff, #096dd9)' 
@@ -88,10 +87,17 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
       ? 'white' 
       : '#f3f4f6'
   };
-  align-self: ${props => (props.isOwn ? 'flex-end' : 'flex-start')};
+  align-self: flex-start;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
+  width: fit-content;
+  min-width: 80px;
+  max-width: 70vw;
+  margin-top: 0;
+  font-size: 1rem;
   
   &::before {
     content: '';
@@ -118,9 +124,11 @@ const MessageBubbleWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: auto;
+  flex: 0 0 auto;
   
   &[data-is-own='true'] {
-    align-items: flex-end;
+    align-items: flex-start;
   }
 `;
 
@@ -134,6 +142,10 @@ const MessageActions = styled.div`
   .ant-btn {
     padding: 2px 5px;
     font-size: 11px;
+  }
+  
+  ${MessageBubbleWrapper}:hover & {
+    opacity: 1;
   }
 `;
 
@@ -303,6 +315,41 @@ const ConversationItem = styled(List.Item)`
   }
 `;
 
+// 添加新的样式组件
+const MessageContainer = styled.div<{ isOwn: boolean }>`
+  display: flex;
+  flex-direction: ${props => props.isOwn ? 'row-reverse' : 'row'};
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+`;
+
+const MessageSenderInfo = styled.div<{ isOwn: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  width: auto;
+  justify-content: flex-start;
+`;
+
+const SenderName = styled(Text)`
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+`;
+
+const SenderAvatar = styled(Avatar)`
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+`;
+
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
@@ -340,9 +387,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const handleSendMessage = () => {
     if (!messageInput.trim() || !currentConversation || !currentUser) return;
 
+    // 添加调试信息
+    console.log('=== 发送消息调试信息 ===');
+    console.log('当前用户ID:', currentUser._id, '类型:', typeof currentUser._id);
+    console.log('消息内容:', messageInput);
+
     dispatch(sendMessage({ conversationId: currentConversation._id, content: messageInput }) as any)
       .unwrap()
-      .then(() => {
+      .then((sentMessage: Message) => {
+        console.log('=== 消息发送成功后的调试信息 ===');
+        console.log('发送的消息:', sentMessage);
+        console.log('发送者ID:', sentMessage.senderId, '类型:', typeof sentMessage.senderId);
+        console.log('当前用户ID:', currentUser._id, '类型:', typeof currentUser._id);
+        
+        // 修复比较逻辑：处理senderId可能是对象的情况
+        let senderIdToCompare = sentMessage.senderId;
+        if (typeof sentMessage.senderId === 'object' && sentMessage.senderId !== null && '_id' in sentMessage.senderId) {
+          senderIdToCompare = (sentMessage.senderId as any)._id;
+          console.log('发送者ID是对象，提取_id字段:', senderIdToCompare);
+        }
+        
+        console.log('ID比较结果 (直接比较):', senderIdToCompare === currentUser._id);
+        console.log('ID比较结果 (字符串比较):', String(senderIdToCompare) === String(currentUser._id));
         setMessageInput('');
         setReplyToMessage(null);
       })
@@ -376,9 +442,169 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const getOtherParticipant = (conversation: Conversation) => {
     if (!currentUser) return conversation.participants[0] || null;
     
-    return conversation.participants.find(
-      participant => participant._id !== currentUser._id
+    // 添加调试信息
+    console.log('=== 获取会话参与者调试信息 ===');
+    console.log('当前用户ID:', currentUser._id);
+    console.log('会话所有参与者:', conversation.participants);
+    
+    // 修复逻辑：寻找不是当前用户的参与者
+    const otherParticipant = conversation.participants.find(
+      participant => {
+        // 处理参与者ID可能是对象的情况
+        const participantId = typeof participant._id === 'object' && participant._id !== null && '_id' in participant._id 
+          ? (participant._id as any)._id 
+          : participant._id;
+        const currentUserId = typeof currentUser._id === 'object' && currentUser._id !== null && '_id' in currentUser._id 
+          ? (currentUser._id as any)._id 
+          : currentUser._id;
+          
+        const isNotCurrentUser = String(participantId) !== String(currentUserId);
+        console.log(`比较参与者 ${participantId} 与当前用户 ${currentUserId}: ${isNotCurrentUser} (是否为其他参与者)`);
+        return isNotCurrentUser;
+      }
     ) || conversation.participants[0];
+    
+    console.log('找到的对方参与者:', otherParticipant);
+    return otherParticipant;
+  };
+
+  // 在消息渲染部分也添加调试信息
+  const renderMessage = (message: Message) => {
+    // 调试信息
+    console.log('=== 消息渲染调试信息 ===');
+    console.log('消息对象:', message);
+    console.log('发送者ID:', message.senderId, '类型:', typeof message.senderId);
+    console.log('当前用户ID:', currentUser?._id, '类型:', typeof currentUser?._id);
+    
+    // 修复比较逻辑：处理senderId可能是对象的情况
+    let senderIdToCompare = message.senderId;
+    if (typeof message.senderId === 'object' && message.senderId !== null && '_id' in message.senderId) {
+      senderIdToCompare = (message.senderId as any)._id;
+      console.log('发送者ID是对象，提取_id字段:', senderIdToCompare);
+    }
+    
+    console.log('ID比较结果 (直接比较):', senderIdToCompare === currentUser?._id);
+    console.log('ID比较结果 (字符串比较):', String(senderIdToCompare) === String(currentUser?._id));
+    
+    const isOwnMessage = String(senderIdToCompare) === String(currentUser?._id);
+    console.log('是否为我方消息:', isOwnMessage);
+    
+    // 获取发送者信息
+    let senderInfo = null;
+    if (currentConversation) {
+      senderInfo = currentConversation.participants.find(
+        participant => {
+          // 同样处理参与者ID可能是对象的情况
+          const participantId = typeof participant._id === 'object' && participant._id !== null && '_id' in participant._id 
+            ? (participant._id as any)._id 
+            : participant._id;
+          const messageId = typeof message.senderId === 'object' && message.senderId !== null && '_id' in message.senderId 
+            ? (message.senderId as any)._id 
+            : message.senderId;
+          return String(participantId) === String(messageId);
+        }
+      );
+    }
+    
+    return (
+      <MessageContainer isOwn={isOwnMessage}>
+        {isOwnMessage && senderInfo ? (
+          <>
+            <MessageSenderInfo isOwn={isOwnMessage}>
+              <SenderName>{senderInfo.username}</SenderName>
+              <SenderAvatar 
+                src={senderInfo.avatar ? getFullImageUrl(senderInfo.avatar) : undefined}
+                icon={<UserOutlined />}
+              />
+            </MessageSenderInfo>
+            <MessageBubbleWrapper
+              key={message._id}
+              data-is-own={isOwnMessage}
+            >
+              <MessageBubble isOwn={isOwnMessage}>
+                {message.content}
+                <br />
+                <Text
+                  style={{
+                    fontSize: '0.8rem',
+                    opacity: 0.8,
+                    color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(243,244,246,0.9)',
+                    marginTop: '4px',
+                    display: 'block',
+                  }}
+                >
+                  {dayjs(message.createdAt).format('HH:mm')}
+                </Text>
+              </MessageBubble>
+              <MessageActions>
+                <Button 
+                  type="text" 
+                  icon={<CopyOutlined />}
+                  size="small"
+                  onClick={() => handleMessageAction('copy', message)}
+                  style={{ color: isOwnMessage ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
+                />
+                <Button 
+                  type="text" 
+                  icon={<CommentOutlined />}
+                  size="small"
+                  onClick={() => handleMessageAction('reply', message)}
+                  style={{ color: isOwnMessage ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
+                />
+              </MessageActions>
+            </MessageBubbleWrapper>
+          </>
+        ) : (
+          <>
+            {!isOwnMessage && senderInfo && (
+              <MessageSenderInfo isOwn={isOwnMessage}>
+                <SenderName>{senderInfo.username}</SenderName>
+                <SenderAvatar 
+                  src={senderInfo.avatar ? getFullImageUrl(senderInfo.avatar) : undefined}
+                  icon={<UserOutlined />}
+                />
+              </MessageSenderInfo>
+            )}
+            <MessageBubbleWrapper
+              key={message._id}
+              data-is-own={isOwnMessage}
+            >
+              <MessageBubble isOwn={isOwnMessage}>
+                {message.content}
+                <br />
+                <Text
+                  style={{
+                    fontSize: '0.8rem',
+                    opacity: 0.8,
+                    color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(243,244,246,0.9)',
+                    marginTop: '4px',
+                    display: 'block',
+                  }}
+                >
+                  {dayjs(message.createdAt).format('HH:mm')}
+                </Text>
+              </MessageBubble>
+              <MessageActions>
+                <Button 
+                  type="text" 
+                  icon={<CopyOutlined />}
+                  size="small"
+                  onClick={() => handleMessageAction('copy', message)}
+                  style={{ color: isOwnMessage ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
+                />
+                <Button 
+                  type="text" 
+                  icon={<CommentOutlined />}
+                  size="small"
+                  onClick={() => handleMessageAction('reply', message)}
+                  style={{ color: isOwnMessage ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
+                />
+              </MessageActions>
+            </MessageBubbleWrapper>
+          </>
+        )}
+      </MessageContainer>
+    );
   };
 
   return (
@@ -488,44 +714,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     <Spin tip="加载消息中..." />
                   </div>
                 ) : (
-                  messages.map((message) => (
-                    <MessageBubbleWrapper
-                      key={message._id}
-                      data-is-own={message.senderId === currentUser?._id}
-                    >
-                      <MessageBubble isOwn={message.senderId === currentUser?._id}>
-                        {message.content}
-                        <br />
-                        <Text
-                          style={{
-                            fontSize: '0.7rem',
-                            opacity: 0.8,
-                            color: message.senderId === currentUser?._id ? 'rgba(255,255,255,0.9)' : 'rgba(243,244,246,0.9)',
-                            marginTop: '4px',
-                            display: 'block',
-                          }}
-                        >
-                          {dayjs(message.createdAt).format('HH:mm')}
-                        </Text>
-                        <MessageActions>
-                          <Button 
-                            type="text" 
-                            icon={<CopyOutlined />}
-                            size="small"
-                            onClick={() => handleMessageAction('copy', message)}
-                            style={{ color: message.senderId === currentUser?._id ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
-                          />
-                          <Button 
-                            type="text" 
-                            icon={<CommentOutlined />}
-                            size="small"
-                            onClick={() => handleMessageAction('reply', message)}
-                            style={{ color: message.senderId === currentUser?._id ? 'rgba(255,255,255,0.8)' : 'rgba(243,244,246,0.8)' }}
-                          />
-                        </MessageActions>
-                      </MessageBubble>
-                    </MessageBubbleWrapper>
-                  ))
+                  messages.map(renderMessage)
                 )}
               </MessageList>
 
