@@ -155,8 +155,13 @@ const FileDetailPage: React.FC = () => {
 
   const handlePreview = () => {
     if (!file) return;
-    message.info('预览功能待实现');
-    // 这里应该实现文件预览功能
+    
+    // 如果是图片文件，直接在新窗口打开图片
+    if (file.fileType === 'image' && file.fileUrl) {
+      window.open(getFullImageUrl(file.fileUrl), '_blank');
+    } else {
+      message.info('预览功能待实现');
+    }
   };
 
   const handleLike = async () => {
@@ -223,7 +228,13 @@ const FileDetailPage: React.FC = () => {
         
         <FileHeader>
           <FilePreview>
-            {file.thumbnailUrl ? (
+            {file.fileType === 'image' && file.fileUrl ? (
+              <img 
+                src={getFullImageUrl(file.fileUrl)} 
+                alt={file.displayName}
+                style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }}
+              />
+            ) : file.thumbnailUrl ? (
               <img 
                 src={getFullImageUrl(file.thumbnailUrl)} 
                 alt={file.displayName}

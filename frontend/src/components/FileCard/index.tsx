@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import { useNavigate } from 'react-router-dom';
+import { getFullImageUrl } from '../../utils/imageUtils';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -227,13 +228,26 @@ const FileCard: React.FC<FileCardProps> = ({
       transition={{ duration: 0.3 }}
     >
       <FilePreview fileType={file.fileType}>
-        {file.fileType === 'image' && file.thumbnailUrl ? (
-          <Image
-            src={file.thumbnailUrl}
-            alt={file.displayName}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            preview={false}
-          />
+        {file.fileType === 'image' ? (
+          file.thumbnailUrl ? (
+            <Image
+              src={getFullImageUrl(file.thumbnailUrl)}
+              alt={file.displayName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              preview={false}
+            />
+          ) : file.fileUrl ? (
+            <Image
+              src={getFullImageUrl(file.fileUrl)}
+              alt={file.displayName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              preview={false}
+            />
+          ) : (
+            <FileTypeIcon fileType={file.fileType}>
+              {getFileTypeIcon(file.fileType)}
+            </FileTypeIcon>
+          )
         ) : (
           <FileTypeIcon fileType={file.fileType}>
             {getFileTypeIcon(file.fileType)}

@@ -26,6 +26,7 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import FileCard from '../../components/FileCard';
 import { FileItem } from '../../types';
+import api from '../../utils/api';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -114,123 +115,6 @@ const EmptyContainer = styled.div`
   color: ${props => props.theme.colors.text.secondary};
 `;
 
-// 模拟数据
-const mockFiles: FileItem[] = [
-  {
-    _id: '1',
-    filename: 'sample1.jpg',
-    originalName: 'sample1.jpg',
-    displayName: '示例图片 1',
-    description: '这是一个示例图片文件',
-    fileType: 'image',
-    mimeType: 'image/jpeg',
-    fileSize: 1024000,
-    fileSizeFormatted: '1.02 MB',
-    fileUrl: '/uploads/sample1.jpg',
-    thumbnailUrl: '/uploads/thumb_sample1.jpg',
-    uploaderId: 'user1',
-    uploader: {
-      _id: 'user1',
-      username: '示例用户',
-      email: 'user@example.com',
-      avatar: '',
-      bio: '',
-      location: '',
-      website: '',
-      followers: [],
-      following: [],
-      followersCount: 0,
-      followingCount: 0,
-      isActive: true,
-      isVerified: false,
-      role: 'user',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      preferences: {
-        theme: 'auto',
-        language: 'zh-CN',
-        notifications: {
-          email: true,
-          push: true
-        }
-      }
-    },
-    tags: ['图片', '示例', '测试'],
-    category: '图片素材',
-    downloadCount: 15,
-    viewCount: 45,
-    likeCount: 8,
-    likes: [],
-    isPublic: true,
-    isActive: true,
-    accessLevel: 'public',
-    metadata: {
-      width: 1920,
-      height: 1080
-    },
-    processing: {
-      status: 'completed',
-      progress: 100
-    },
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15')
-  },
-  {
-    _id: '2',
-    filename: 'document1.pdf',
-    originalName: 'document1.pdf',
-    displayName: '重要文档',
-    description: '这是一个重要的PDF文档',
-    fileType: 'document',
-    mimeType: 'application/pdf',
-    fileSize: 2048000,
-    fileSizeFormatted: '2.05 MB',
-    fileUrl: '/uploads/document1.pdf',
-    uploaderId: 'user2',
-    uploader: {
-      _id: 'user2',
-      username: '文档管理员',
-      email: 'admin@example.com',
-      avatar: '',
-      bio: '',
-      location: '',
-      website: '',
-      followers: [],
-      following: [],
-      followersCount: 0,
-      followingCount: 0,
-      isActive: true,
-      isVerified: true,
-      role: 'admin',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      preferences: {
-        theme: 'auto',
-        language: 'zh-CN',
-        notifications: {
-          email: true,
-          push: true
-        }
-      }
-    },
-    tags: ['文档', 'PDF', '工作'],
-    category: '工作文档',
-    downloadCount: 32,
-    viewCount: 89,
-    likeCount: 12,
-    likes: [],
-    isPublic: true,
-    isActive: true,
-    accessLevel: 'public',
-    processing: {
-      status: 'completed',
-      progress: 100
-    },
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-10')
-  }
-];
-
 const FileExplorer: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -246,27 +130,40 @@ const FileExplorer: React.FC = () => {
     total: 0
   });
 
-  // 模拟加载数据
+  // 加载真实数据
   useEffect(() => {
     const loadFiles = async () => {
       setLoading(true);
-      // 模拟 API 调用
-      setTimeout(() => {
-        const filteredFiles = mockFiles.filter(file => {
-          if (filters.fileType && file.fileType !== filters.fileType) return false;
-          if (filters.category && file.category !== filters.category) return false;
-          if (filters.searchTerm && !file.displayName.toLowerCase().includes(filters.searchTerm.toLowerCase())) return false;
-          return true;
-        });
+      try {
+        const params: any = {
+          page: pagination.current,
+          limit: pagination.pageSize,
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder
+        };
         
-        setFiles(filteredFiles);
-        setPagination(prev => ({ ...prev, total: filteredFiles.length }));
+        if (filters.fileType) params.fileType = filters.fileType;
+        if (filters.category) params.category = filters.category;
+        if (filters.searchTerm) params.search = filters.searchTerm;
+        
+        const response = await api.get('/files', { params });
+        
+        if (response.data.success) {
+          setFiles(response.data.data.files);
+          setPagination(prev => ({
+            ...prev,
+            total: response.data.data.pagination.total
+          }));
+        }
+      } catch (error) {
+        console.error('加载文件失败:', error);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
     loadFiles();
-  }, [filters]);
+  }, [filters, pagination.current, pagination.pageSize]);
 
   const handleSearch = (value: string) => {
     setFilters(prev => ({ ...prev, searchTerm: value }));
@@ -284,8 +181,26 @@ const FileExplorer: React.FC = () => {
   };
 
   const handleFileAction = (action: string, file: FileItem) => {
-    console.log(`${action} file:`, file);
-    // 这里实现具体的文件操作逻辑
+    switch (action) {
+      case 'download':
+        // 实现下载逻辑
+        window.open(`/api/files/${file._id}/download`, '_blank');
+        break;
+      case 'like':
+        // 实现点赞逻辑
+        console.log('点赞文件:', file._id);
+        break;
+      case 'share':
+        // 实现分享逻辑
+        console.log('分享文件:', file._id);
+        break;
+      case 'preview':
+        // 实现预览逻辑
+        console.log('预览文件:', file._id);
+        break;
+      default:
+        break;
+    }
   };
 
   const sortMenuItems = [
