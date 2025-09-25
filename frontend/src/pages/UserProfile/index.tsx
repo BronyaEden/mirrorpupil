@@ -352,8 +352,8 @@ const UserProfile: React.FC<UserProfileProps> = () => {
           setUserData(currentUser);
           setFollowStatus({
             isFollowing: false,
-            followersCount: currentUser.followersCount || 0,
-            followingCount: currentUser.followingCount || 0
+            followersCount: currentUser.followersCount !== undefined ? currentUser.followersCount : (currentUser.followers ? currentUser.followers.length : 0),
+            followingCount: currentUser.followingCount !== undefined ? currentUser.followingCount : (currentUser.following ? currentUser.following.length : 0)
           });
           await loadUserStatsAndFiles(currentUser._id);
         } else if (userId) {
@@ -365,8 +365,8 @@ const UserProfile: React.FC<UserProfileProps> = () => {
             setUserData(userProfile);
             setFollowStatus({
               isFollowing: currentUser?.following?.includes(userId) || false,
-              followersCount: userProfile.followersCount || 0,
-              followingCount: userProfile.followingCount || 0
+              followersCount: userProfile.followersCount !== undefined ? userProfile.followersCount : (userProfile.followers ? userProfile.followers.length : 0),
+              followingCount: userProfile.followingCount !== undefined ? userProfile.followingCount : (userProfile.following ? userProfile.following.length : 0)
             });
             await loadUserStatsAndFiles(userId);
           }

@@ -295,17 +295,29 @@ class AuthService {
     
     const [users, total] = await Promise.all([
       User.find(searchConditions)
-        .select('username email avatar coverImage bio followersCount followingCount createdAt isVerified')
+        .select('username email avatar coverImage bio followers following createdAt isVerified')
         .skip(skip)
         .limit(limit)
         .sort({ followersCount: -1, createdAt: -1 }), // 按关注者数量和创建时间排序，使更相关的用户排在前面
       User.countDocuments(searchConditions)
     ]);
     
-    // 确保返回的头像和背景图URL是完整的
+    // 确保返回的头像和背景图URL是完整的，并明确设置关注者和关注中数量
     const usersWithFullUrls = users.map(user => {
-      const userObj = user.toObject();
-      return userObj;
+      // 不使用toObject，直接构建返回对象
+      return {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        coverImage: user.coverImage,
+        bio: user.bio,
+        createdAt: user.createdAt,
+        isVerified: user.isVerified,
+        // 明确计算关注者和关注中数量
+        followersCount: user.followers ? user.followers.length : 0,
+        followingCount: user.following ? user.following.length : 0
+      };
     });
     
     return {
@@ -328,7 +340,7 @@ class AuthService {
     const user = await User.findById(userId)
       .populate({
         path: 'followers',
-        select: 'username avatar coverImage bio followersCount followingCount createdAt isVerified',
+        select: 'username avatar coverImage bio followers following createdAt isVerified',
         options: {
           skip: skip,
           limit: limit,
@@ -343,10 +355,21 @@ class AuthService {
     // 获取关注者总数
     const total = user.followers.length;
     
-    // 确保返回的头像和背景图URL是完整的
+    // 确保返回的头像和背景图URL是完整的，并明确设置关注者和关注中数量
     const followersWithFullUrls = user.followers.map(follower => {
-      const followerObj = follower.toObject();
-      return followerObj;
+      // 不使用toObject，直接构建返回对象
+      return {
+        _id: follower._id,
+        username: follower.username,
+        avatar: follower.avatar,
+        coverImage: follower.coverImage,
+        bio: follower.bio,
+        createdAt: follower.createdAt,
+        isVerified: follower.isVerified,
+        // 明确计算关注者和关注中数量
+        followersCount: follower.followers ? follower.followers.length : 0,
+        followingCount: follower.following ? follower.following.length : 0
+      };
     });
     
     return {
@@ -369,7 +392,7 @@ class AuthService {
     const user = await User.findById(userId)
       .populate({
         path: 'following',
-        select: 'username avatar coverImage bio followersCount followingCount createdAt isVerified',
+        select: 'username avatar coverImage bio followers following createdAt isVerified',
         options: {
           skip: skip,
           limit: limit,
@@ -384,10 +407,21 @@ class AuthService {
     // 获取关注中总数
     const total = user.following.length;
     
-    // 确保返回的头像和背景图URL是完整的
+    // 确保返回的头像和背景图URL是完整的，并明确设置关注者和关注中数量
     const followingWithFullUrls = user.following.map(following => {
-      const followingObj = following.toObject();
-      return followingObj;
+      // 不使用toObject，直接构建返回对象
+      return {
+        _id: following._id,
+        username: following.username,
+        avatar: following.avatar,
+        coverImage: following.coverImage,
+        bio: following.bio,
+        createdAt: following.createdAt,
+        isVerified: following.isVerified,
+        // 明确计算关注者和关注中数量
+        followersCount: following.followers ? following.followers.length : 0,
+        followingCount: following.following ? following.following.length : 0
+      };
     });
     
     return {

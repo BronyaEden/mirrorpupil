@@ -143,7 +143,15 @@ const UserSearch: React.FC<UserSearchProps> = () => {
       // 使用真实API调用替换模拟数据
       const response = await authAPI.searchUsers(query, 1, 20);
       console.log('Search API response:', response.data);
-      setUsers(response.data.data.users);
+      
+      // 确保每个用户都有followersCount和followingCount字段
+      const usersWithCounts = response.data.data.users.map((user: User) => ({
+        ...user,
+        followersCount: user.followersCount !== undefined ? user.followersCount : (user.followers ? user.followers.length : 0),
+        followingCount: user.followingCount !== undefined ? user.followingCount : (user.following ? user.following.length : 0)
+      }));
+      
+      setUsers(usersWithCounts);
       setLoading(false);
     } catch (error: any) {
       console.error('搜索用户失败:', error);
@@ -248,15 +256,16 @@ const UserSearch: React.FC<UserSearchProps> = () => {
                         </Text>
                         <Space size="middle" style={{ marginTop: 8 }}>
                           <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                            关注者: {user.followersCount}
+                            关注者: {user.followersCount !== undefined ? user.followersCount : (user.followers ? user.followers.length : 0)}
                           </Text>
                           <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                            关注中: {user.followingCount}
+                            关注中: {user.followingCount !== undefined ? user.followingCount : (user.following ? user.following.length : 0)}
                           </Text>
                           <Text type="secondary" style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.7)' }}>
                             加入于 {dayjs(user.createdAt).fromNow()}
                           </Text>
                         </Space>
+
                       </div>
                     </div>
                   </UserCard>

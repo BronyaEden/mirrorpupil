@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { List, Avatar, Skeleton, Button, Empty, message } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import authAPI from '../../utils/api/auth';
 import { User } from '../../types';
@@ -29,6 +30,11 @@ const ListContainer = styled.div`
 const UserItem = styled(List.Item)`
   padding: ${props => props.theme.spacing.md} 0;
   border-bottom: 1px solid ${props => props.theme.colors.neutral.gray400};
+  cursor: pointer;
+  
+  &:hover {
+    background: ${props => props.theme.colors.background.hover};
+  }
   
   &:last-child {
     border-bottom: none;
@@ -65,11 +71,9 @@ const UserStats = styled.div`
   }
 `;
 
-const FollowButton = styled(Button)`
-  margin-left: ${props => props.theme.spacing.md};
-`;
-
 const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
+  const navigate = useNavigate();
+  
   const [state, setState] = useState<FollowListState>({
     users: [],
     loading: true,
@@ -98,9 +102,17 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
         const { users, pagination } = response.data.data;
         const newUsers = page === 1 ? users : [...state.users, ...users];
         
+        // 确保每个用户都有followersCount和followingCount字段，并使用明确的数值
+        const usersWithCounts = newUsers.map(user => ({
+          ...user,
+          // 使用后端明确返回的数量，如果后端没有返回则使用默认值0
+          followersCount: user.followersCount !== undefined ? user.followersCount : 0,
+          followingCount: user.followingCount !== undefined ? user.followingCount : 0
+        }));
+        
         setState(prev => ({
           ...prev,
-          users: newUsers,
+          users: usersWithCounts,
           loading: false,
           page: pagination.page,
           total: pagination.total,
@@ -120,42 +132,9 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
     }
   };
 
-  const handleFollow = async (targetUserId: string) => {
-    try {
-      const response = await authAPI.followUser(targetUserId);
-      if (response.data.success) {
-        message.success('关注成功');
-        // 更新用户列表中的关注状态
-        setState(prev => ({
-          ...prev,
-          users: prev.users.map(user => 
-            user._id === targetUserId ? { ...user, isFollowing: true } : user
-          )
-        }));
-      }
-    } catch (error: any) {
-      console.error('关注失败:', error);
-      message.error(error.response?.data?.message || '关注失败');
-    }
-  };
-
-  const handleUnfollow = async (targetUserId: string) => {
-    try {
-      const response = await authAPI.unfollowUser(targetUserId);
-      if (response.data.success) {
-        message.success('取消关注成功');
-        // 更新用户列表中的关注状态
-        setState(prev => ({
-          ...prev,
-          users: prev.users.map(user => 
-            user._id === targetUserId ? { ...user, isFollowing: false } : user
-          )
-        }));
-      }
-    } catch (error: any) {
-      console.error('取消关注失败:', error);
-      message.error(error.response?.data?.message || '取消关注失败');
-    }
+  // 添加用户点击跳转功能
+  const handleUserClick = (targetUserId: string) => {
+    navigate(`/profile/${targetUserId}`);
   };
 
   if (state.loading && state.users.length === 0) {
@@ -182,7 +161,7 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
       <List
         dataSource={state.users}
         renderItem={(user: User) => (
-          <UserItem>
+          <UserItem onClick={() => handleUserClick(user._id)}>
             <UserAvatar
               size={48}
               src={getFullImageUrl(user.avatar) || undefined}
@@ -192,28 +171,10 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
               <Username>{user.username}</Username>
               {user.bio && <UserBio>{user.bio}</UserBio>}
               <UserStats>
-                <span>关注者: {user.followersCount || 0}</span>
-                <span>关注中: {user.followingCount || 0}</span>
+                <span>关注者: {user.followersCount !== undefined ? user.followersCount : 0}</span>
+                <span>关注中: {user.followingCount !== undefined ? user.followingCount : 0}</span>
               </UserStats>
             </UserInfo>
-            {type === 'following' && user.isFollowing !== undefined && (
-              user.isFollowing ? (
-                <FollowButton 
-                  type="default" 
-                  danger
-                  onClick={() => handleUnfollow(user._id)}
-                >
-                  取消关注
-                </FollowButton>
-              ) : (
-                <FollowButton 
-                  type="primary"
-                  onClick={() => handleFollow(user._id)}
-                >
-                  关注
-                </FollowButton>
-              )
-            )}
           </UserItem>
         )}
         loading={state.loading && state.users.length > 0}
