@@ -29,16 +29,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { fetchConversations, fetchMessages, sendMessage, setCurrentConversation, clearMessages } from '../../store/chatSlice';
 import { getFullImageUrl } from '../../utils/imageUtils';
-import ParticleBackground from '../../components/ParticleBackground'; // 导入粒子背景组件
+import ParticleBackground from '../../components/ParticleBackground';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
 
-// 创建动态渐变动画
+// 创建更丰富的动态渐变动画
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
   100% { background-position: 0% 50%; }
 `;
 
@@ -56,7 +58,7 @@ const ChatLayout = styled(Layout)`
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   border: 2px solid transparent;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%); /* 调整主背景透明度 */
   background-clip: padding-box;
   position: relative;
   
@@ -67,11 +69,33 @@ const ChatLayout = styled(Layout)`
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3);
-    background-size: 300% 300%;
-    animation: ${gradientAnimation} 8s ease infinite;
+    background: linear-gradient(45deg, 
+      #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, 
+      #feca57, #ff9ff3, #667eea, #764ba2,
+      #ff6b6b, #4ecdc4);
+    background-size: 400% 400%;
+    animation: ${gradientAnimation} 20s ease infinite;
     z-index: -1;
     border-radius: 18px;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(120deg,
+      rgba(255, 107, 107, 0.2),
+      rgba(78, 205, 196, 0.2),
+      rgba(69, 183, 209, 0.2),
+      rgba(150, 206, 180, 0.2),
+      rgba(254, 202, 87, 0.2));
+    background-size: 300% 300%;
+    animation: ${gradientAnimation} 25s ease infinite reverse;
+    z-index: -1;
+    border-radius: 16px;
   }
 `;
 
@@ -93,8 +117,8 @@ const ChatContentWithParticles = styled.div`
 
 const MessageBubble = styled.div<{ isOwn: boolean }>`
   margin: 4px 0;
-  padding: 10px 12px; /* 增加内边距 */
-  border-radius: 18px; /* 增加圆角 */
+  padding: 10px 12px;
+  border-radius: 18px;
   background: ${props => 
     props.isOwn 
       ? 'linear-gradient(135deg, #1890ff, #096dd9)' 
@@ -106,7 +130,7 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
       : '#f3f4f6'
   };
   align-self: flex-start;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 增强阴影效果 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
   word-wrap: break-word;
@@ -116,8 +140,80 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
   max-width: 70vw;
   margin-top: 0;
   font-size: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   
+  /* 添加动态背景渐变动画 */
+  background-size: 300% 300%;
+  animation: ${props => props.isOwn 
+    ? 'gradientShiftOwn 8s cubic-bezier(0.4, 0, 0.2, 1) infinite' 
+    : 'gradientShiftOther 10s cubic-bezier(0.4, 0, 0.2, 1) infinite'};
+  
+  @keyframes gradientShiftOwn {
+    0% {
+      background: linear-gradient(135deg, #1890ff, #096dd9, #40a9ff);
+      background-position: 0% 50%;
+    }
+    25% {
+      background: linear-gradient(135deg, #40a9ff, #1890ff, #096dd9);
+      background-position: 50% 50%;
+    }
+    50% {
+      background: linear-gradient(135deg, #096dd9, #40a9ff, #1890ff);
+      background-position: 100% 50%;
+    }
+    75% {
+      background: linear-gradient(135deg, #1890ff, #096dd9, #40a9ff);
+      background-position: 50% 100%;
+    }
+    100% {
+      background: linear-gradient(135deg, #1890ff, #096dd9, #40a9ff);
+      background-position: 0% 50%;
+    }
+  }
+  
+  @keyframes gradientShiftOther {
+    0% {
+      background: linear-gradient(135deg, #1f2937, #374151, #4b5563);
+      background-position: 0% 50%;
+    }
+    25% {
+      background: linear-gradient(135deg, #374151, #4b5563, #1f2937);
+      background-position: 50% 50%;
+    }
+    50% {
+      background: linear-gradient(135deg, #4b5563, #1f2937, #374151);
+      background-position: 100% 50%;
+    }
+    75% {
+      background: linear-gradient(135deg, #1f2937, #374151, #4b5563);
+      background-position: 50% 100%;
+    }
+    100% {
+      background: linear-gradient(135deg, #1f2937, #374151, #4b5563);
+      background-position: 0% 50%;
+    }
+  }
+  
+  /* 添加动态闪光效果 */
   &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    transition: left 0.6s ease;
+    z-index: 1;
+  }
+  
+  /* 添加渐变层 */
+  &::after {
     content: '';
     position: absolute;
     top: 0;
@@ -132,6 +228,17 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
     z-index: 1;
   }
   
+  /* 悬停时的闪光效果 */
+  &:hover::before {
+    left: 100%;
+  }
+  
+  /* 悬停时的缩放和阴影效果 */
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+  
   > * {
     position: relative;
     z-index: 2;
@@ -144,6 +251,20 @@ const MessageBubbleWrapper = styled.div`
   align-items: flex-start;
   width: auto;
   flex: 0 0 auto;
+  
+  /* 添加进入动画效果 */
+  animation: fadeInUp 0.3s ease-out;
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
   
   &[data-is-own='true'] {
     align-items: flex-start;
@@ -168,7 +289,7 @@ const MessageActions = styled.div`
 `;
 
 const ConversationSider = styled(Sider)`
-  background: rgba(31, 41, 55, 0.95);
+  background: rgba(31, 41, 55, 0.8); /* 降低背景不透明度以显示背景渐变 */
   border-right: 2px solid rgba(75, 85, 99, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 14px 0 0 14px;
@@ -176,7 +297,7 @@ const ConversationSider = styled(Sider)`
 `;
 
 const ChatContent = styled(Content)`
-  background: rgba(17, 24, 39, 0.95);
+  background: rgba(17, 24, 39, 0.7); /* 降低背景不透明度以显示背景渐变 */
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(10px);
@@ -396,7 +517,7 @@ const ConversationItem = styled(List.Item)`
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     
     &::before {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
     }
   }
 `;
