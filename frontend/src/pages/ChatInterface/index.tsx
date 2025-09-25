@@ -930,6 +930,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                             size={45}
                             icon={<UserOutlined />} 
                             src={otherParticipant?.avatar ? getFullImageUrl(otherParticipant.avatar) : undefined}
+                            onClick={() => navigate(`/profile/${otherParticipant?._id}`)}
+                            style={{ cursor: 'pointer' }}
                           />
                           <UserInfo>
                             <UserName>
