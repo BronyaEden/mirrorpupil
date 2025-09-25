@@ -8,7 +8,8 @@ import {
   Typography,
   Space,
   Spin,
-  message
+  message,
+  Switch
 } from 'antd';
 import {
   SendOutlined,
@@ -28,6 +29,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { fetchConversations, fetchMessages, sendMessage, setCurrentConversation, clearMessages } from '../../store/chatSlice';
 import { getFullImageUrl } from '../../utils/imageUtils';
+import ParticleBackground from '../../components/ParticleBackground'; // 导入粒子背景组件
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -47,7 +49,7 @@ const { TextArea } = Input;
 interface ChatInterfaceProps {}
 
 const ChatLayout = styled(Layout)`
-  height: calc(100vh - 140px); /* 进一步减小高度 */
+  height: calc(100vh - 140px);
   background: transparent;
   margin: 15px 15px 30px 15px;
   border-radius: 16px;
@@ -73,10 +75,26 @@ const ChatLayout = styled(Layout)`
   }
 `;
 
+const ParticleBackgroundContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -2; /* 确保粒子背景在最底层 */
+`;
+
+const ChatContentWithParticles = styled.div`
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
 const MessageBubble = styled.div<{ isOwn: boolean }>`
   margin: 4px 0;
-  padding: 7px 8px;
-  border-radius: 15px;
+  padding: 10px 12px; /* 增加内边距 */
+  border-radius: 18px; /* 增加圆角 */
   background: ${props => 
     props.isOwn 
       ? 'linear-gradient(135deg, #1890ff, #096dd9)' 
@@ -88,7 +106,7 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
       : '#f3f4f6'
   };
   align-self: flex-start;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 增强阴影效果 */
   position: relative;
   overflow: hidden;
   word-wrap: break-word;
@@ -108,8 +126,8 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
     bottom: 0;
     background: ${props => 
       props.isOwn 
-        ? 'linear-gradient(135deg, rgba(255,255,255,0.1), transparent)' 
-        : 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)'
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.15), transparent)' 
+        : 'linear-gradient(135deg, rgba(255,255,255,0.08), transparent)'
     };
     z-index: 1;
   }
@@ -154,6 +172,7 @@ const ConversationSider = styled(Sider)`
   border-right: 2px solid rgba(75, 85, 99, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 14px 0 0 14px;
+  width: 280px; /* 设置固定宽度为280px */
 `;
 
 const ChatContent = styled(Content)`
@@ -193,6 +212,27 @@ const ChatHeader = styled.div`
   gap: 16px;
   backdrop-filter: blur(10px);
   border-radius: 0 14px 0 0;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    z-index: -1;
+    border-radius: 0 14px 0 0;
+  }
+`;
+
+const ControlsContainer = styled.div`
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 `;
 
 const BackButton = styled(Button)`
@@ -207,6 +247,11 @@ const BackButton = styled(Button)`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #764ba2, #667eea); /* 增强悬停效果 */
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -292,6 +337,23 @@ const NewConversationButton = styled(Button)`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #764ba2, #667eea); /* 增强悬停效果 */
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    z-index: -1;
+    border-radius: 12px;
   }
 `;
 
@@ -303,17 +365,39 @@ const ConversationItem = styled(List.Item)`
   border: 1px solid rgba(75, 85, 99, 0.3);
   transition: all 0.3s ease;
   cursor: pointer;
+  position: relative; /* 添加相对定位 */
+  overflow: hidden; /* 添加溢出隐藏 */
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+    z-index: -1;
+  }
   
   &:hover {
     background: rgba(55, 65, 81, 0.8);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     border-color: rgba(102, 126, 234, 0.5);
+    
+    &::before {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), transparent);
+    }
   }
   
   &[data-active="true"] {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
     border-color: rgba(102, 126, 234, 0.8);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    
+    &::before {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+    }
   }
 `;
 
@@ -334,22 +418,27 @@ const MessageSenderInfo = styled.div<{ isOwn: boolean }>`
   margin-bottom: 4px;
   width: auto;
   justify-content: flex-start;
+  align-self: flex-start; /* 确保头像靠上对齐 */
 `;
 
 const SenderName = styled(Text)`
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* 调整字体大小 */
   color: #9ca3af;
   font-weight: 500;
   text-align: center;
   white-space: nowrap;
+  max-width: 60px; /* 限制最大宽度 */
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const SenderAvatar = styled(Avatar)`
-  width: 36px;
-  height: 36px;
-  font-size: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 32px; /* 调整头像尺寸为32px */
+  height: 32px;
+  font-size: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 `;
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
@@ -361,6 +450,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   
   const [messageInput, setMessageInput] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [performanceMode, setPerformanceMode] = useState<'high' | 'low'>('high'); // 添加性能模式状态
+  const [showParticles, setShowParticles] = useState(true); // 添加粒子效果开关状态
   const messageListRef = useRef<HTMLDivElement>(null);
 
   // 滚动到消息列表底部的函数
@@ -485,7 +576,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const getOtherParticipant = (conversation: Conversation) => {
     if (!currentUser) return conversation.participants[0] || null;
     
-    
     // 修复逻辑：寻找不是当前用户的参与者
     const otherParticipant = conversation.participants.find(
       participant => {
@@ -508,13 +598,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   // 在消息渲染部分也添加调试信息
   const renderMessage = (message: Message) => {
-
     // 修复比较逻辑：处理senderId可能是对象的情况
     let senderIdToCompare = message.senderId;
     if (typeof message.senderId === 'object' && message.senderId !== null && '_id' in message.senderId) {
       senderIdToCompare = (message.senderId as any)._id;
     }
-    
     
     const isOwnMessage = String(senderIdToCompare) === String(currentUser?._id);
     
@@ -533,6 +621,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           return String(participantId) === String(messageId);
         }
       );
+    }
+    
+    // 如果没有找到发送者信息，使用默认信息
+    if (!senderInfo && currentConversation) {
+      const otherParticipant = getOtherParticipant(currentConversation);
+      // 如果是自己的消息，使用当前用户信息；否则使用对方用户信息
+      senderInfo = isOwnMessage ? currentUser : otherParticipant;
     }
     
     return (
@@ -690,94 +785,124 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
         <ChatContent>
           {currentConversation ? (
-            <>
-              {/* 聊天头部 */}
-              <ChatHeader>
-                <BackButton 
-                  type="primary" 
-                  onClick={() => navigate('/messages')}
-                >
-                  ← 返回消息
-                </BackButton>
-                <Space>
-                  {(() => {
-                    const otherParticipant = getOtherParticipant(currentConversation);
-                    return (
-                      <>
-                        <UserAvatar 
-                          size={45}
-                          icon={<UserOutlined />} 
-                          src={otherParticipant?.avatar ? getFullImageUrl(otherParticipant.avatar) : undefined}
-                        />
-                        <UserInfo>
-                          <UserName>
-                            {otherParticipant?.username}
-                          </UserName>
-                          <UserStatus>在线</UserStatus>
-                        </UserInfo>
-                      </>
-                    );
-                  })()}
-                </Space>
-              </ChatHeader>
-
-              {/* 回复消息提示 */}
-              {replyToMessage && (
-                <ReplyContainer>
-                  <ReplyText>
-                    回复: {replyToMessage.content?.substring(0, 30)}...
-                  </ReplyText>
-                  <CancelButton 
-                    type="text" 
-                    onClick={() => setReplyToMessage(null)}
-                  >
-                    取消
-                  </CancelButton>
-                </ReplyContainer>
+            <ChatContentWithParticles>
+              {showParticles && (
+                <ParticleBackgroundContainer>
+                  <ParticleBackground performanceMode={performanceMode} />
+                </ParticleBackgroundContainer>
               )}
-              
-              {/* 消息列表 */}
-              <MessageList ref={messageListRef}>
-                {loading && messages.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 16 }}>
-                    <Spin tip="加载消息中..." />
-                  </div>
-                ) : (
-                  messages.map(renderMessage)
-                )}
-              </MessageList>
+              <>
+                {/* 聊天头部 */}
+                <ChatHeader>
+                  <BackButton 
+                    type="primary" 
+                    onClick={() => navigate('/messages')}
+                  >
+                    ← 返回消息
+                  </BackButton>
+                  <Space>
+                    {(() => {
+                      const otherParticipant = getOtherParticipant(currentConversation);
+                      return (
+                        <>
+                          <UserAvatar 
+                            size={45}
+                            icon={<UserOutlined />} 
+                            src={otherParticipant?.avatar ? getFullImageUrl(otherParticipant.avatar) : undefined}
+                          />
+                          <UserInfo>
+                            <UserName>
+                              {otherParticipant?.username}
+                            </UserName>
+                            <UserStatus>在线</UserStatus>
+                          </UserInfo>
+                        </>
+                      );
+                    })()}
+                  </Space>
+                  {/* 将开关移到右侧并上下排列 */}
+                  <ControlsContainer>
+                    <Space size="small">
+                      <Text style={{ color: '#9ca3af', fontSize: '0.9rem' }}>粒子效果:</Text>
+                      <Switch 
+                        checked={showParticles} 
+                        onChange={setShowParticles} 
+                        size="small"
+                        style={{ backgroundColor: showParticles ? '#1890ff' : '#4b5563' }}
+                      />
+                    </Space>
+                    {showParticles && (
+                      <Space size="small">
+                        <Text style={{ color: '#9ca3af', fontSize: '0.9rem' }}>性能模式:</Text>
+                        <Switch 
+                          checked={performanceMode === 'high'} 
+                          onChange={(checked) => setPerformanceMode(checked ? 'high' : 'low')} 
+                          size="small"
+                          style={{ backgroundColor: performanceMode === 'high' ? '#1890ff' : '#4b5563' }}
+                        />
+                      </Space>
+                    )}
+                  </ControlsContainer>
+                </ChatHeader>
 
-              {/* 消息输入 */}
-              <MessageInput>
-                <TextArea
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder="输入消息..."
-                  autoSize={{ minRows: 1, maxRows: 4 }}
-                  onPressEnter={(e) => {
-                    if (!e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  style={{ 
-                    flex: 1,
-                    borderRadius: 12,
-                    background: 'rgba(31, 41, 55, 0.7)',
-                    border: '1px solid rgba(75, 85, 99, 0.5)',
-                    color: '#f3f4f6',
-                  }}
-                />
-                <SendButton
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
-                >
-                  发送
-                </SendButton>
-              </MessageInput>
-            </>
+                {/* 回复消息提示 */}
+                {replyToMessage && (
+                  <ReplyContainer>
+                    <ReplyText>
+                      回复: {replyToMessage.content?.substring(0, 30)}...
+                    </ReplyText>
+                    <CancelButton 
+                      type="text" 
+                      onClick={() => setReplyToMessage(null)}
+                    >
+                      取消
+                    </CancelButton>
+                  </ReplyContainer>
+                )}
+                
+                {/* 消息列表 */}
+                <MessageList ref={messageListRef}>
+                  {loading && messages.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 16 }}>
+                      <Spin tip="加载消息中..." />
+                    </div>
+                  ) : (
+                    messages.map(renderMessage)
+                  )}
+                </MessageList>
+
+                {/* 消息输入 */}
+                <MessageInput>
+                  <TextArea
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    placeholder="输入消息..."
+                    autoSize={{ minRows: 1, maxRows: 4 }}
+                    onPressEnter={(e) => {
+                      if (!e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    style={{ 
+                      flex: 1,
+                      borderRadius: 12,
+                      background: 'rgba(31, 41, 55, 0.7)',
+                      border: '1px solid rgba(75, 85, 99, 0.5)',
+                      color: '#f3f4f6',
+                    }}
+                  />
+                  <SendButton
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim()}
+                  >
+                    发送
+                  </SendButton>
+                </MessageInput>
+              </>
+            </ChatContentWithParticles>
           ) : (
             <div style={{ 
               display: 'flex', 
