@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import api from '../../utils/api/index.ts';
 
 const { Dragger } = Upload;
 const { TextArea } = Input;
@@ -65,11 +66,14 @@ const StyledDragger = styled(Dragger)`
   }
   
   .ant-upload-text {
-    color: ${props => props.theme.colors.text.primary} !important;
+    color: #00D9FF !important; /* 蓝绿色 */
+    font-size: 20px !important; /* 调大字号 */
+    font-weight: 500 !important;
   }
   
   .ant-upload-hint {
-    color: ${props => props.theme.colors.text.secondary} !important;
+    color: #00D9FF !important; /* 蓝绿色 */
+    font-size: 16px !important; /* 调大字号 */
   }
 `;
 
@@ -103,6 +107,45 @@ const TagInputField = styled(Input)`
   }
 `;
 
+const StyledFormItemLabel = styled.span`
+  color: #00D9FF !important; /* 蓝绿色 */
+  font-size: 18px !important; /* 调大字号 */
+  font-weight: 500 !important;
+`;
+
+const StyledInput = styled(Input)`
+  &::placeholder {
+    color: #00D9FF !important; /* 蓝绿色 */
+    font-size: 16px !important; /* 调大字号 */
+  }
+`;
+
+const StyledTextArea = styled(TextArea)`
+  &::placeholder {
+    color: #00D9FF !important; /* 蓝绿色 */
+    font-size: 16px !important; /* 调大字号 */
+  }
+`;
+
+const StyledSelect = styled(Select)`
+  .ant-select-selection-placeholder {
+    color: #888888 !important; /* 灰色 */
+    font-size: 16px !important; /* 调大字号 */
+  }
+`;
+
+const StyledButton = styled(Button)`
+  height: 48px !important;
+  font-size: 1.1rem !important;
+  background: linear-gradient(45deg, #00D9FF, #00A3FF, #0066FF) !important;
+  border: none !important;
+  
+  &:hover, &:focus {
+    background: linear-gradient(45deg, #00A3FF, #0066FF, #0033CC) !important;
+    border: none !important;
+  }
+`;
+
 const FileUpload: React.FC = () => {
   const [form] = Form.useForm<FileUploadForm>();
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -130,22 +173,21 @@ const FileUpload: React.FC = () => {
       formData.append('isPublic', values.isPublic.toString());
       formData.append('accessLevel', values.accessLevel);
 
-      // 模拟上传进度
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev < 90) return prev + 10;
-          return prev;
-        });
-      }, 200);
+      // 使用真实的API上传文件
+      const response = await api.post('/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          }
+        },
+      });
 
-      // 这里应该调用实际的上传API
-      // const response = await fileAPI.upload(formData);
-      
-      // 模拟上传完成
-      setTimeout(() => {
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-        message.success('文件上传成功！');
+      if (response.data.success) {
+        message.success('上传成功');
         
         // 重置表单
         form.resetFields();
@@ -154,10 +196,13 @@ const FileUpload: React.FC = () => {
         setTagInput('');
         setUploading(false);
         setUploadProgress(0);
-      }, 2000);
+      } else {
+        throw new Error(response.data.message || '上传失败');
+      }
 
-    } catch (error) {
-      message.error('文件上传失败');
+    } catch (error: any) {
+      console.error('文件上传失败:', error);
+      message.error(error.response?.data?.message || '文件上传失败');
       setUploading(false);
       setUploadProgress(0);
     }
@@ -213,7 +258,7 @@ const FileUpload: React.FC = () => {
             }}
           >
             {/* 文件选择区域 */}
-            <Form.Item label="选择文件">
+            <Form.Item label={<StyledFormItemLabel>选择文件</StyledFormItemLabel>}>
               <StyledDragger
                 beforeUpload={handleFileSelect}
                 showUploadList={false}
@@ -257,17 +302,17 @@ const FileUpload: React.FC = () => {
             {/* 文件信息 */}
             <Form.Item
               name="displayName"
-              label="文件名称"
+              label={<StyledFormItemLabel>文件名称</StyledFormItemLabel>}
               rules={[{ required: true, message: '请输入文件名称' }]}
             >
-              <Input placeholder="输入文件显示名称" />
+              <StyledInput />
             </Form.Item>
 
             <Form.Item
               name="description"
-              label="文件描述"
+              label={<StyledFormItemLabel>文件描述</StyledFormItemLabel>}
             >
-              <TextArea 
+              <StyledTextArea 
                 rows={3} 
                 placeholder="简单描述这个文件..." 
                 maxLength={1000}
@@ -277,9 +322,9 @@ const FileUpload: React.FC = () => {
 
             <Form.Item
               name="category"
-              label="文件分类"
+              label={<StyledFormItemLabel>文件分类</StyledFormItemLabel>}
             >
-              <Select placeholder="选择分类">
+              <StyledSelect placeholder="选择分类">
                 <Option value="工作文档">工作文档</Option>
                 <Option value="学习资料">学习资料</Option>
                 <Option value="图片素材">图片素材</Option>
@@ -287,11 +332,11 @@ const FileUpload: React.FC = () => {
                 <Option value="音频文件">音频文件</Option>
                 <Option value="软件工具">软件工具</Option>
                 <Option value="其他">其他</Option>
-              </Select>
+              </StyledSelect>
             </Form.Item>
 
             {/* 标签输入 */}
-            <Form.Item label="文件标签">
+            <Form.Item label={<StyledFormItemLabel>文件标签</StyledFormItemLabel>}>
               <TagInput>
                 {tags.map(tag => (
                   <Tag 
@@ -332,29 +377,28 @@ const FileUpload: React.FC = () => {
 
             <Form.Item
               name="accessLevel"
-              label="访问权限"
+              label={<StyledFormItemLabel>访问权限</StyledFormItemLabel>}
             >
-              <Select>
+              <StyledSelect>
                 <Option value="public">所有人可访问</Option>
                 <Option value="friends">仅好友可访问</Option>
                 <Option value="link">仅通过链接访问</Option>
                 <Option value="private">仅自己可访问</Option>
-              </Select>
+              </StyledSelect>
             </Form.Item>
 
             {/* 提交按钮 */}
             <Form.Item>
-              <Button 
+              <StyledButton 
                 type="primary" 
                 htmlType="submit" 
                 size="large"
                 loading={uploading}
                 disabled={!uploadFile}
                 block
-                style={{ height: 48, fontSize: '1.1rem' }}
               >
                 {uploading ? '上传中...' : '开始上传'}
-              </Button>
+              </StyledButton>
             </Form.Item>
           </Form>
         </StyledCard>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
   Card, 
   Typography, 
@@ -17,6 +17,8 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import FileCard from '../../components/FileCard';
 import api from '../../utils/api';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -41,8 +43,9 @@ const FileGrid = styled.div`
   margin-bottom: 32px;
 `;
 
-const FilesPage: React.FC = () => {
-  const navigate = useNavigate();
+const UserFilesPage: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
+  const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,6 +53,7 @@ const FilesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [fileType, setFileType] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
+  const isOwnProfile = !userId || (currentUser?._id === userId);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -59,7 +63,8 @@ const FilesPage: React.FC = () => {
           page: currentPage,
           limit: 12,
           sortBy,
-          sortOrder: 'desc'
+          sortOrder: 'desc',
+          uploaderId: userId || currentUser?._id
         };
         
         if (searchTerm) {
@@ -87,8 +92,10 @@ const FilesPage: React.FC = () => {
       }
     };
 
-    fetchFiles();
-  }, [currentPage, searchTerm, fileType, sortBy]);
+    if (userId || currentUser) {
+      fetchFiles();
+    }
+  }, [currentPage, searchTerm, fileType, sortBy, userId, currentUser]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -160,8 +167,30 @@ const FilesPage: React.FC = () => {
   };
 
   const handlePreview = (file: any) => {
-    // 导航到文件详情页面
-    navigate(`/files/${file._id}`);
+    // 实现预览逻辑
+    message.info('预览功能待实现');
+  };
+
+  const handleEdit = (file: any) => {
+    // 实现编辑逻辑
+    message.info('编辑功能待实现');
+  };
+
+  const handleDelete = async (file: any) => {
+    try {
+      const response = await api.delete(`/files/${file._id}`);
+      
+      if (response.data.success) {
+        // 从文件列表中移除
+        setFiles(prevFiles => prevFiles.filter(f => f._id !== file._id));
+        message.success('文件删除成功');
+      } else {
+        message.error(response.data.message || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除文件失败:', error);
+      message.error('删除文件失败');
+    }
   };
 
   return (
@@ -172,7 +201,7 @@ const FilesPage: React.FC = () => {
         transition={{ duration: 0.5 }}
       >
         <Title level={2} style={{ color: '#fff', marginBottom: 32 }}>
-          文件库
+          {isOwnProfile ? '我的文件' : '用户文件'}
         </Title>
         
         <FilterSection>
@@ -237,6 +266,10 @@ const FilesPage: React.FC = () => {
                   onLike={() => handleLike(file)}
                   onShare={() => handleShare(file)}
                   onPreview={() => handlePreview(file)}
+                  onEdit={isOwnProfile ? () => handleEdit(file) : undefined}
+                  onDelete={isOwnProfile ? () => handleDelete(file) : undefined}
+                  showActions={true}
+                  isOwner={isOwnProfile}
                 />
               ))}
             </FileGrid>
@@ -253,7 +286,7 @@ const FilesPage: React.FC = () => {
           </>
         ) : (
           <Empty
-            description="暂无文件"
+            description={isOwnProfile ? "您还没有上传任何文件" : "该用户还没有上传任何文件"}
             style={{ color: '#9ca3af', padding: '60px 0' }}
           />
         )}
@@ -262,4 +295,4 @@ const FilesPage: React.FC = () => {
   );
 };
 
-export default FilesPage;
+export default UserFilesPage;

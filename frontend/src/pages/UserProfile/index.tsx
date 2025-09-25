@@ -53,6 +53,8 @@ import 'dayjs/locale/zh-cn';
 import authAPI from '../../utils/api/auth';
 import api from '../../utils/api';
 import { getFullImageUrl } from '../../utils/imageUtils';
+import UserFilesPage from './UserFilesPage';
+import { useLocation } from 'react-router-dom';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -281,6 +283,7 @@ const ChatButton = styled(Button)`
 
 const UserProfile: React.FC<UserProfileProps> = () => {
   const { userId } = useParams<{ userId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { user: currentUser, loading, isAuthenticated, accessToken } = useSelector((state: RootState) => state.auth);
@@ -318,7 +321,19 @@ const UserProfile: React.FC<UserProfileProps> = () => {
   // 检查是否有访问令牌但没有用户信息（可能正在恢复过程中）
   const isUserRecoveryNeeded = !userId && !currentUser && !!accessToken;
   
+  // 检查当前路径是否是文件页面
+  const isFilesPage = location.pathname.endsWith('/files');
+  
+  // 注意：我们不能在这里提前返回，因为这会破坏Hooks的规则
+  // 我们需要在组件渲染时根据条件渲染不同的内容
+  
   useEffect(() => {
+    // 如果是文件页面，我们不需要执行用户资料相关的逻辑
+    if (isFilesPage) {
+      setDataLoading(false);
+      return;
+    }
+    
     // 调试信息
     const localAccessToken = localStorage.getItem('accessToken');
     console.log('UserProfile useEffect triggered', {
@@ -393,21 +408,76 @@ const UserProfile: React.FC<UserProfileProps> = () => {
     };
     
     loadUserData();
-  }, [userId, currentUser, isOwnProfile, isAuthenticated, accessToken, loading, isUserRecoveryNeeded]);
+  }, [userId, currentUser, isOwnProfile, isAuthenticated, accessToken, loading, isUserRecoveryNeeded, isFilesPage, navigate, dispatch]);
   
   const loadUserStatsAndFiles = async (userId: string) => {
-    // 模拟统计数据
-    setUserStats({
-      totalFiles: 15,
-      totalViews: 1234,
-      totalDownloads: 567,
-      totalLikes: 89
-    });
-    
-    // 模拟文件数据
-    setUserFiles([
-      // 这里应该是从API获取的实际文件数据
-    ]);
+    try {
+      // 添加一个小的延迟以避免请求过于频繁
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 获取用户文件统计
+      const statsResponse = await api.get(`/files/stats/${userId}`);
+      if (statsResponse.data.success) {
+        setUserStats({
+          totalFiles: statsResponse.data.data.totalFiles,
+          totalViews: statsResponse.data.data.totalViews,
+          totalDownloads: statsResponse.data.data.totalDownloads,
+          totalLikes: statsResponse.data.data.totalLikes
+        });
+      }
+      
+      // 添加一个小的延迟以避免请求过于频繁
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 获取用户文件列表
+      const filesResponse = await api.get('/files', {
+        params: {
+          uploaderId: userId,
+          page: 1,
+          limit: 6
+        }
+      });
+      
+      if (filesResponse.data.success) {
+        setUserFiles(filesResponse.data.data.files);
+      }
+    } catch (error: any) {
+      // 如果是429错误，等待一段时间后重试
+      if (error.response?.status === 429) {
+        console.log('遇到429错误，等待1秒后重试...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 重试一次
+        try {
+          const statsResponse = await api.get(`/files/stats/${userId}`);
+          if (statsResponse.data.success) {
+            setUserStats({
+              totalFiles: statsResponse.data.data.totalFiles,
+              totalViews: statsResponse.data.data.totalViews,
+              totalDownloads: statsResponse.data.data.totalDownloads,
+              totalLikes: statsResponse.data.data.totalLikes
+            });
+          }
+          
+          const filesResponse = await api.get('/files', {
+            params: {
+              uploaderId: userId,
+              page: 1,
+              limit: 6
+            }
+          });
+          
+          if (filesResponse.data.success) {
+            setUserFiles(filesResponse.data.data.files);
+          }
+        } catch (retryError) {
+          console.error('重试获取用户统计和文件失败:', retryError);
+          message.error('获取用户信息失败');
+        }
+      } else {
+        console.error('获取用户统计和文件失败:', error);
+        message.error('获取用户信息失败');
+      }
+    }
   };
   
   const handleEditProfile = () => {
@@ -639,6 +709,15 @@ const UserProfile: React.FC<UserProfileProps> = () => {
     );
   }
   
+  // 如果是文件页面，渲染文件页面组件
+  if (isFilesPage) {
+    return (
+      <ProfileContainer>
+        <UserFilesPage />
+      </ProfileContainer>
+    );
+  }
+  
   if (dataLoading) {
     return (
       <ProfileContainer>
@@ -802,7 +881,11 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         {/* 统计数据 */}
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col xs={12} sm={6}>
-            <StatsCard>
+            <StatsCard 
+              onClick={() => navigate(`/profile/${userData?._id}/files`)}
+              style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+              hoverable
+            >
               <Statistic
                 title="文件数量"
                 value={userStats?.totalFiles || 0}
@@ -842,34 +925,8 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         {/* 内容标签页 */}
         <ContentTabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane tab="上传的文件" key="files">
-            {userFiles.length > 0 ? (
-              <FileGrid>
-                {userFiles.map((file, index) => (
-                  <motion.div
-                    key={file._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <FileCard
-                      file={file}
-                      onDownload={(file) => handleFileAction('download', file)}
-                      onLike={(file) => handleFileAction('like', file)}
-                      onShare={(file) => handleFileAction('share', file)}
-                      onPreview={(file) => handleFileAction('preview', file)}
-                      onEdit={isOwnProfile ? (file) => handleFileAction('edit', file) : undefined}
-                      onDelete={isOwnProfile ? (file) => handleFileAction('delete', file) : undefined}
-                      showActions={true}
-                      isOwner={isOwnProfile}
-                    />
-                  </motion.div>
-                ))}
-              </FileGrid>
-            ) : (
-              <Empty
-                description={isOwnProfile ? "您还没有上传任何文件" : "该用户还没有上传任何文件"}
-                style={{ color: '#B0BEC5', padding: '60px 0' }}
-              />
+            {userData && (
+              <UserFilesPage />
             )}
           </TabPane>
           

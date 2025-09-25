@@ -33,6 +33,7 @@ import PageTransition from './components/PageTransition';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
+import FileDetailPage from './pages/FileDetailPage';  // 添加文件详情页面导入
 
 // 路由守卫组件
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -125,6 +126,8 @@ const App: React.FC = () => {
                           <Route path="files" element={<FileExplorer />} />
                           <Route path="profile" element={<UserProfile />} />
                           <Route path="profile/:userId" element={<UserProfile />} />
+                          <Route path="profile/:userId/files" element={<UserProfile />} />
+                          <Route path="files/:fileId" element={<FileDetailPage />} />
                           
                           {/* 需要认证的路由 */}
                           <Route path="upload" element={

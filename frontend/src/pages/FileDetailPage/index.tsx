@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, 
   Typography, 
@@ -26,6 +26,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { FileItem } from '../../types';
 import { getFullImageUrl } from '../../utils/imageUtils';
+import api from '../../utils/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -89,6 +90,7 @@ const UserSection = styled.div`
 
 const FileDetailPage: React.FC = () => {
   const { fileId } = useParams<{ fileId: string }>();
+  const navigate = useNavigate();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const [file, setFile] = useState<FileItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,81 +98,24 @@ const FileDetailPage: React.FC = () => {
   const [likeCount, setLikeCount] = useState(0);
 
   useEffect(() => {
-    // 模拟获取文件详情
     const fetchFileDetail = async () => {
       setLoading(true);
       try {
-        // 这里应该调用实际的API获取文件详情
-        // const response = await fileAPI.getFileDetail(fileId);
-        // setFile(response.data);
+        const response = await api.get(`/files/${fileId}`);
         
-        // 模拟数据
-        setTimeout(() => {
-          const mockFile: FileItem = {
-            _id: fileId || '1',
-            filename: 'example-file.pdf',
-            originalName: 'Example Document.pdf',
-            displayName: '示例文档',
-            description: '这是一个示例文档，用于演示文件详情页面的展示效果。文档包含了丰富的信息和内容，可以帮助用户了解文件的详细信息。',
-            fileType: 'document',
-            mimeType: 'application/pdf',
-            fileSize: 2048000,
-            fileSizeFormatted: '2MB',
-            fileUrl: '/uploads/example-file.pdf',
-            thumbnailUrl: '/uploads/example-thumbnail.jpg',
-            uploaderId: 'user123',
-            uploader: {
-              _id: 'user123',
-              username: '示例用户',
-              email: 'user@example.com',
-              avatar: '/uploads/avatar.jpg',
-              coverImage: '/uploads/cover.jpg',
-              bio: '这是一个示例用户',
-              location: '北京',
-              website: 'https://example.com',
-              followers: [],
-              following: [],
-              followersCount: 100,
-              followingCount: 50,
-              isActive: true,
-              isVerified: true,
-              role: 'user',
-              lastLoginAt: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              preferences: {
-                theme: 'dark',
-                language: 'zh-CN',
-                notifications: {
-                  email: true,
-                  push: true
-                }
-              }
-            },
-            tags: ['文档', '示例', '教程'],
-            category: '学习资料',
-            downloadCount: 1500,
-            viewCount: 3200,
-            likeCount: 89,
-            likes: [],
-            isPublic: true,
-            isActive: true,
-            accessLevel: 'public',
-            metadata: {},
-            processing: {
-              status: 'completed',
-              progress: 100,
-              message: '处理完成'
-            },
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          
-          setFile(mockFile);
-          setLikeCount(mockFile.likeCount);
-          setLoading(false);
-        }, 1000);
+        if (response.data.success) {
+          const fileData = response.data.data.file;
+          setFile(fileData);
+          setLikeCount(fileData.likeCount);
+          // 检查当前用户是否已点赞
+          setLiked(fileData.likes.some((like: any) => like.user._id === currentUser?._id));
+        } else {
+          message.error(response.data.message || '获取文件详情失败');
+        }
+        
+        setLoading(false);
       } catch (error) {
+        console.error('获取文件详情失败:', error);
         message.error('获取文件详情失败');
         setLoading(false);
       }
@@ -179,12 +124,33 @@ const FileDetailPage: React.FC = () => {
     if (fileId) {
       fetchFileDetail();
     }
-  }, [fileId]);
+  }, [fileId, currentUser]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!file) return;
-    message.success('开始下载文件');
-    // 这里应该调用实际的下载API
+    
+    try {
+      const response = await api.get(`/files/${file._id}/download`, {
+        responseType: 'blob'
+      });
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', file.originalName);
+      document.body.appendChild(link);
+      link.click();
+      
+      // 清理
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      message.success('开始下载文件');
+    } catch (error) {
+      console.error('下载文件失败:', error);
+      message.error('下载文件失败');
+    }
   };
 
   const handlePreview = () => {
@@ -193,17 +159,34 @@ const FileDetailPage: React.FC = () => {
     // 这里应该实现文件预览功能
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!file) return;
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-    message.success(liked ? '取消点赞' : '点赞成功');
-    // 这里应该调用实际的点赞API
+    
+    try {
+      const response = await api.post(`/files/${file._id}/like`);
+      
+      if (response.data.success) {
+        setLiked(response.data.data.isLiked);
+        setLikeCount(response.data.data.likeCount);
+        message.success(response.data.data.isLiked ? '点赞成功' : '取消点赞');
+      } else {
+        message.error(response.data.message || '操作失败');
+      }
+    } catch (error) {
+      console.error('点赞操作失败:', error);
+      message.error('点赞操作失败');
+    }
   };
 
   const handleShare = () => {
     message.info('分享功能待实现');
     // 这里应该实现分享功能
+  };
+
+  const handleUserClick = () => {
+    if (file?.uploader?._id) {
+      navigate(`/profile/${file.uploader._id}`);
+    }
   };
 
   if (loading) {
@@ -280,7 +263,7 @@ const FileDetailPage: React.FC = () => {
               <Text><strong>文件名：</strong> {file.originalName}</Text>
               <Text><strong>文件大小：</strong> {file.fileSizeFormatted}</Text>
               <Text><strong>文件类型：</strong> {file.mimeType}</Text>
-              <Text><strong>上传时间：</strong> {file.createdAt.toLocaleDateString()}</Text>
+              <Text><strong>上传时间：</strong> {new Date(file.createdAt).toLocaleDateString()}</Text>
               <Text><strong>分类：</strong> {file.category}</Text>
             </Space>
             
@@ -310,7 +293,7 @@ const FileDetailPage: React.FC = () => {
                 预览
               </Button>
               <Button 
-                icon={<LikeOutlined />}
+                icon={liked ? <LikeOutlined /> : <LikeOutlined />}
                 size="large"
                 onClick={handleLike}
                 danger={liked}
@@ -326,7 +309,7 @@ const FileDetailPage: React.FC = () => {
               </Button>
             </ActionButtons>
             
-            <UserSection>
+            <UserSection onClick={handleUserClick} style={{ cursor: 'pointer' }}>
               <Avatar 
                 size={48} 
                 icon={<UserOutlined />} 
@@ -340,7 +323,7 @@ const FileDetailPage: React.FC = () => {
                   )}
                 </Text>
                 <Text type="secondary">
-                  <CalendarOutlined /> {file.createdAt.toLocaleDateString()}
+                  <CalendarOutlined /> {new Date(file.createdAt).toLocaleDateString()}
                 </Text>
               </div>
             </UserSection>

@@ -16,6 +16,7 @@ import { FileItem } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import { useNavigate } from 'react-router-dom';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -153,6 +154,8 @@ const FileCard: React.FC<FileCardProps> = ({
   showActions = true,
   isOwner = false
 }) => {
+  const navigate = useNavigate();
+
   const getFileTypeIcon = (fileType: string) => {
     const icons = {
       image: '🖼️',
@@ -165,9 +168,8 @@ const FileCard: React.FC<FileCardProps> = ({
   };
 
   const handlePreview = () => {
-    if (onPreview) {
-      onPreview(file);
-    }
+    // 导航到文件详情页面
+    navigate(`/files/${file._id}`);
   };
 
   const handleDownload = (e: React.MouseEvent) => {
