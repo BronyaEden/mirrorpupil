@@ -12,6 +12,7 @@ import FileExplorer from './pages/FileExplorer';
 import FileUpload from './pages/FileUpload';
 import UserProfile from './pages/UserProfile';
 import ChatInterface from './pages/ChatInterface';
+
 import MessagesPage from './pages/MessagesPage';
 import AIChatPage from './pages/AIChatPage';  // 添加AI聊天页面导入
 import UserSearch from './pages/UserSearch';
@@ -162,6 +163,7 @@ const App: React.FC = () => {
                               <UserSearch />
                             </ProtectedRoute>
                           } />
+                          
                         </Route>
                         
                         {/* 404重定向 */}

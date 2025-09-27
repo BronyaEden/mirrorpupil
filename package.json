@@ -1,0 +1,23 @@
+{
+  "name": "file-social-platform",
+  "version": "1.0.0",
+  "description": "A file management and social platform",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "health": "node health-check.js",
+    "setup": "setup-dev-environment.bat",
+    "start": "start-dev.bat",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "file-sharing",
+    "social-platform",
+    "file-management"
+  ],
+  "author": "File Social Platform Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2"
+  }
+}

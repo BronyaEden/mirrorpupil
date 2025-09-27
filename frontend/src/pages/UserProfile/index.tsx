@@ -698,6 +698,26 @@ const UserProfile: React.FC<UserProfileProps> = () => {
     }
   };
   
+  // 添加调试useEffect
+  useEffect(() => {
+    console.log('UserProfile component mounted or updated', {
+      userData,
+      isAuthenticated,
+      accessToken: accessToken ? accessToken.substring(0, 20) + '...' : null
+    });
+    
+    if (userData) {
+      console.log('User data details:', {
+        userId: userData._id,
+        username: userData.username,
+        avatar: userData.avatar,
+        coverImage: userData.coverImage,
+        avatarUrl: getFullImageUrl(userData.avatar),
+        coverImageUrl: getFullImageUrl(userData.coverImage)
+      });
+    }
+  }, [userData, isAuthenticated, accessToken]);
+  
   // 如果正在恢复用户状态，显示加载中
   if (isRestoringUser || isUserRecoveryNeeded) {
     return (

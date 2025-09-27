@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.js';
 import fileRoutes from './routes/files.js';
 import chatRoutes from './routes/chat.js';
 import adminRoutes from './routes/admin.js';
+import imageRoutes from './routes/images.js';
 
 // 加载环境变量
 dotenv.config();
@@ -36,9 +37,10 @@ app.use(helmet({
   contentSecurityPolicy: false // 开发环境可以关闭，生产环境建议配置
 }));
 
-const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:3000", "http://localhost:3001"];
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"];
 console.log('CORS Origins:', corsOrigins);
 
+// 全局CORS配置
 app.use(cors({
   origin: corsOrigins,
   credentials: true
@@ -96,6 +98,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/images', imageRoutes);
 
 // API路由（待实现）
 app.get('/api', (req, res) => {
@@ -179,7 +182,7 @@ process.on('SIGINT', () => {
   console.log('收到SIGINT信号，正在关闭服务器...');
   server.close(() => {
     console.log('服务器已关闭');
-    mongoose.connection.close(false, () => {
+    mongoose.connection.close(() => {
       console.log('MongoDB连接已关闭');
       process.exit(0);
     });

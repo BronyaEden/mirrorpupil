@@ -7,16 +7,7 @@ import multer from 'multer';
 
 // 头像上传配置
 const avatarUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, 'uploads');
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = file.mimetype.split('/')[1];
-      cb(null, 'avatar-' + uniqueSuffix + '.' + ext);
-    }
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -31,16 +22,7 @@ const avatarUpload = multer({
 
 // 背景图上传配置
 const coverUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, 'uploads');
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = file.mimetype.split('/')[1];
-      cb(null, 'cover-' + uniqueSuffix + '.' + ext);
-    }
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);

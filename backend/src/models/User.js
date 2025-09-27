@@ -28,12 +28,14 @@ const userSchema = new Schema({
     select: false  // 默认查询时不返回密码
   },
   avatar: {
-    type: String,
-    default: ''
+    type: Schema.Types.ObjectId,
+    ref: 'Image',
+    default: null
   },
   coverImage: {
-    type: String,
-    default: ''
+    type: Schema.Types.ObjectId,
+    ref: 'Image',
+    default: null
   },
   bio: {
     type: String,

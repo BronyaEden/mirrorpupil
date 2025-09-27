@@ -142,6 +142,7 @@ class AuthService {
     const user = await User.findById(userId)
       .populate('followers', 'username avatar')
       .populate('following', 'username avatar');
+      // 注意：不要populate avatar 和 coverImage，因为前端需要的是ID而不是完整对象
     
     if (!user) {
       throw new Error('用户不存在');
@@ -179,11 +180,19 @@ class AuthService {
     
     console.log('Filtered updates', updates);
     
+    // 处理头像和背景图ID
+    if (updates.avatar) {
+      updates.avatar = updates.avatar.toString();
+    }
+    if (updates.coverImage) {
+      updates.coverImage = updates.coverImage.toString();
+    }
+    
     const user = await User.findByIdAndUpdate(
       userId,
       updates,
       { new: true, runValidators: true }
-    );
+    ); // 注意：不要populate avatar 和 coverImage，因为前端需要的是ID而不是完整对象
     
     if (!user) {
       throw new Error('用户不存在');

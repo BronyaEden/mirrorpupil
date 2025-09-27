@@ -1,4 +1,4 @@
-# 文件管理社交平台
+# 镜瞳OVO文件管理社交平台
 
 一个集文件管理与社交互动于一体的Web平台，为用户提供安全便捷的文件存储分享服务和实时社交体验。
 
@@ -87,7 +87,7 @@ file-social-platform/
 
 ## 🚀 快速开始
 
-### 使用Docker（推荐）
+### 方法一：使用Docker（推荐）
 ```bash
 # 克隆项目
 git clone https://github.com/BronyaEden/my-project.git
@@ -105,24 +105,118 @@ docker-compose up -d
 # 后端API: http://localhost:5000/api
 ```
 
-### 本地开发
+### 方法二：本地开发（手动安装依赖）
 
-**前端开发**
+**Windows用户可以使用我们提供的脚本快速设置：**
 ```bash
-cd frontend
-npm install
-npm run dev  # 启动开发服务器 (http://localhost:3000)
+# 运行设置脚本（会自动安装所有依赖）
+setup-dev-environment.bat
 ```
 
-**后端开发**
+**或者手动安装：**
+
+1. **安装后端依赖**
 ```bash
 cd backend
 npm install
-cp .env.example .env  # 配置环境变量
-npm run dev  # 启动开发服务器 (http://localhost:5000)
 ```
 
-### 📖 详细部署说明
+2. **安装前端依赖**
+```bash
+cd frontend
+npm install
+```
+
+### 方法三：本地开发（不使用Docker数据库）
+
+如果您选择不在Docker中运行数据库服务，则需要在本地安装MongoDB和Redis。
+
+#### 安装MongoDB
+
+1. 访问 MongoDB 官方下载页面: https://www.mongodb.com/try/download/community
+2. 选择以下选项：
+   - Version: 最新稳定版本
+   - Platform: Windows x64
+   - Package: msi
+3. 点击 "Download" 下载安装文件
+4. 双击下载的 `.msi` 文件开始安装，按默认选项完成安装
+
+#### 安装Redis
+
+1. 访问 https://github.com/microsoftarchive/redis/releases
+2. 下载最新的 `Redis-x64-*.msi` 文件
+3. 双击下载的 `.msi` 文件开始安装，按默认选项完成安装
+
+#### 启动数据库服务
+
+```bash
+# 启动MongoDB服务（Windows服务方式）
+net start MongoDB
+
+# 启动Redis服务（如果安装为服务）
+net start Redis
+
+# 或者直接运行Redis服务器
+redis-server
+```
+
+#### 配置环境变量
+
+确保 [backend/.env](backend/.env) 和 [frontend/.env](frontend/.env) 文件配置正确，指向本地数据库。
+
+#### 启动开发服务器
+
+```bash
+# 启动后端服务
+cd backend
+npm run dev
+
+# 在新终端中启动前端服务
+cd frontend
+npm run dev
+```
+
+**！！！Windows用户可以使用我们提供的启动脚本：**
+```bash
+# 运行启动脚本（会同时启动前后端服务）
+start-dev.bat
+```
+
+## 使用工具脚本
+
+为了简化开发流程，我们提供了几个实用的脚本：
+
+### Windows用户
+
+1. **设置开发环境**
+```cmd
+setup-dev-environment.bat
+```
+这个脚本会自动安装前后端的所有依赖。
+
+2. **启动开发服务器**
+```cmd
+start-dev.bat
+```
+这个脚本会同时启动前后端开发服务器。
+
+3. **Docker开发环境**
+```cmd
+docker-dev.bat
+```
+这个脚本会使用Docker启动所有服务。
+
+4. **健康检查**
+```cmd
+npm run health
+```
+或者直接运行：
+```cmd
+node health-check.js
+```
+这个脚本会检查所有服务是否正常运行。
+
+## 📖 详细部署说明
 
 查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 获取完整的部署指南，包括：
 - 生产环境配置

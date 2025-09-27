@@ -1,8 +1,6 @@
 import AuthService from '../services/authService.js';
+import ImageService from '../services/imageService.js';
 import { validationResult } from 'express-validator';
-import sharp from 'sharp';
-import path from 'path';
-import fs from 'fs/promises';
 
 class AuthController {
   // 用户注册
@@ -249,6 +247,7 @@ class AuthController {
   // 上传头像
   async uploadAvatar(req, res) {
     try {
+      console.log('Upload avatar request received', req.file);
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -256,21 +255,19 @@ class AuthController {
         });
       }
 
-      // 处理头像图片（调整大小和压缩）
-      const avatarPath = path.join('uploads', req.file.filename);
-      const processedAvatarPath = path.join('uploads', 'processed-' + req.file.filename);
+      // 记录文件信息
+      console.log('File info:', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        bufferLength: req.file.buffer ? req.file.buffer.length : 0
+      });
+
+      // 使用图片服务上传头像
+      const result = await ImageService.uploadImage(req.file, req.user.userId, { isAvatar: true });
       
-      await sharp(avatarPath)
-        .resize(200, 200, { fit: 'cover' })
-        .jpeg({ quality: 80 })
-        .toFile(processedAvatarPath);
-      
-      // 删除原始文件
-      await fs.unlink(avatarPath);
-      
-      // 更新用户信息，生成完整的URL
-      const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/processed-${req.file.filename}`;
-      const user = await AuthService.updateProfile(req.user.userId, { avatar: avatarUrl });
+      // 更新用户信息，保存图片ID
+      const user = await AuthService.updateProfile(req.user.userId, { avatar: result.image._id });
       
       res.json({
         success: true,
@@ -278,6 +275,7 @@ class AuthController {
         data: { user }
       });
     } catch (error) {
+      console.error('Upload avatar error:', error);
       res.status(500).json({
         success: false,
         message: error.message
@@ -296,24 +294,19 @@ class AuthController {
         });
       }
 
-      // 处理背景图片（调整大小和压缩）
-      const coverPath = path.join('uploads', req.file.filename);
-      const processedCoverPath = path.join('uploads', 'processed-' + req.file.filename);
-      console.log('Processing cover image', coverPath, processedCoverPath);
+      // 记录文件信息
+      console.log('File info:', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        bufferLength: req.file.buffer ? req.file.buffer.length : 0
+      });
+
+      // 使用图片服务上传背景图
+      const result = await ImageService.uploadImage(req.file, req.user.userId, { isCover: true });
       
-      await sharp(coverPath)
-        .resize(1920, 600, { fit: 'cover' })
-        .jpeg({ quality: 80 })
-        .toFile(processedCoverPath);
-      
-      // 删除原始文件
-      await fs.unlink(coverPath);
-      
-      // 更新用户信息，生成完整的URL
-      const coverUrl = `${req.protocol}://${req.get('host')}/uploads/processed-${req.file.filename}`;
-      console.log('Updating user profile with coverUrl', coverUrl);
-      const user = await AuthService.updateProfile(req.user.userId, { coverImage: coverUrl });
-      console.log('User profile updated', user.coverImage);
+      // 更新用户信息，保存图片ID
+      const user = await AuthService.updateProfile(req.user.userId, { coverImage: result.image._id });
       
       res.json({
         success: true,
@@ -321,6 +314,7 @@ class AuthController {
         data: { user }
       });
     } catch (error) {
+      console.error('Upload cover error:', error);
       res.status(500).json({
         success: false,
         message: error.message
@@ -373,14 +367,15 @@ class AuthController {
     try {
       const { userId } = req.params;
       
+      // 注意：不要populate avatar 和 coverImage，因为前端需要的是ID而不是完整对象
       const user = await AuthService.getProfile(userId);
       
       // 只返回公开信息
       const publicProfile = {
         _id: user._id,
         username: user.username,
-        avatar: user.avatar,
-        coverImage: user.coverImage,
+        avatar: user.avatar,  // 这应该是图片ID
+        coverImage: user.coverImage,  // 这应该是图片ID
         bio: user.bio,
         location: user.location,
         website: user.website,
