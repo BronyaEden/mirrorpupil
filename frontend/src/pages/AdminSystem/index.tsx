@@ -13,7 +13,8 @@ import {
   Progress,
   Alert,
   Timeline,
-  Badge
+  Badge,
+  Spin // 添加Spin组件的导入
 } from 'antd';
 import {
   CloudServerOutlined,
@@ -80,7 +81,7 @@ const LogCard = styled(Card)`
 // 接口定义
 interface SystemStatus {
   server: {
-    status: 'online' | 'offline' | 'warning';
+    status: 'online' | 'offline' | 'warning' | 'unknown';
     uptime: number;
     memory: {
       rss: number;
@@ -94,11 +95,11 @@ interface SystemStatus {
     };
   };
   database: {
-    status: 'connected' | 'disconnected' | 'warning';
+    status: 'connected' | 'disconnected' | 'warning' | 'unknown';
     connections: number;
   };
   redis: {
-    status: 'connected' | 'disconnected' | 'warning';
+    status: 'connected' | 'disconnected' | 'warning' | 'unknown';
     connections: number;
   };
 }
@@ -113,9 +114,10 @@ interface LogEntry {
 
 const AdminSystem: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
     server: {
-      status: 'online',
+      status: 'unknown',
       uptime: 0,
       memory: {
         rss: 0,
@@ -129,11 +131,11 @@ const AdminSystem: React.FC = () => {
       }
     },
     database: {
-      status: 'connected',
+      status: 'unknown',
       connections: 0
     },
     redis: {
-      status: 'connected',
+      status: 'unknown',
       connections: 0
     }
   });
@@ -147,43 +149,62 @@ const AdminSystem: React.FC = () => {
 
   // 加载系统状态
   useEffect(() => {
+    console.log('AdminSystem - Component mounted, loading system status');
     loadSystemStatus();
     loadSystemLogs();
   }, []);
 
   const loadSystemStatus = async () => {
+    console.log('AdminSystem - Loading system status');
     setLoading(true);
+    setError(null);
     try {
       const response = await adminAPI.getSystemStatus();
-      setSystemStatus(response.data.data);
-    } catch (error) {
+      console.log('AdminSystem - System status response:', response);
+      if (response.data.success) {
+        setSystemStatus(response.data.data);
+      } else {
+        setError(response.data.message || '获取系统状态失败');
+      }
+    } catch (error: any) {
       console.error('加载系统状态失败:', error);
+      setError(error.response?.data?.message || error.message || '加载系统状态失败');
     } finally {
       setLoading(false);
     }
   };
 
   const loadSystemLogs = async (page: number = 1) => {
+    console.log('AdminSystem - Loading system logs, page:', page);
     try {
       const response = await adminAPI.getSystemLogs({
         page,
         limit: pagination.limit
       });
-      const data = response.data.data;
-      setLogs(data.logs);
-      setPagination({
-        page: data.pagination.page,
-        limit: data.pagination.limit,
-        total: data.pagination.total,
-        pages: data.pagination.pages
-      });
-    } catch (error) {
+      console.log('AdminSystem - System logs response:', response);
+      if (response.data.success) {
+        const data = response.data.data;
+        setLogs(data.logs);
+        setPagination({
+          page: data.pagination.page,
+          limit: data.pagination.limit,
+          total: data.pagination.total,
+          pages: data.pagination.pages
+        });
+      } else {
+        setError(response.data.message || '获取系统日志失败');
+      }
+    } catch (error: any) {
       console.error('加载系统日志失败:', error);
+      setError(error.response?.data?.message || error.message || '加载系统日志失败');
     }
   };
 
   // 格式化内存大小
   const formatMemory = (bytes: number) => {
+    // 添加安全检查
+    if (bytes === undefined || bytes === null) return '0 Bytes';
+    
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
@@ -192,6 +213,9 @@ const AdminSystem: React.FC = () => {
 
   // 格式化时间
   const formatUptime = (seconds: number) => {
+    // 添加安全检查
+    if (seconds === undefined || seconds === null) return '0分钟';
+    
     const days = Math.floor(seconds / (24 * 3600));
     const hours = Math.floor((seconds % (24 * 3600)) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -212,10 +236,15 @@ const AdminSystem: React.FC = () => {
       connected: { color: 'green', text: '已连接' },
       warning: { color: 'orange', text: '警告' },
       offline: { color: 'red', text: '离线' },
-      disconnected: { color: 'red', text: '断开' }
+      disconnected: { color: 'red', text: '断开' },
+      unknown: { color: 'default', text: '未知' }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { color: 'default', text: status };
+    // 添加默认值处理，确保不会出现undefined
+    const statusInfo = status && statusMap[status as keyof typeof statusMap] 
+      ? statusMap[status as keyof typeof statusMap] 
+      : { color: 'default', text: status || '未知' };
+      
     return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
   };
 
@@ -228,8 +257,12 @@ const AdminSystem: React.FC = () => {
       debug: { color: 'gray', icon: <BugOutlined /> }
     };
     
-    const levelInfo = levelMap[level as keyof typeof levelMap] || { color: 'default', icon: null };
-    return <Tag color={levelInfo.color} icon={levelInfo.icon}>{level}</Tag>;
+    // 添加默认值处理
+    const levelInfo = level && levelMap[level as keyof typeof levelMap] 
+      ? levelMap[level as keyof typeof levelMap] 
+      : { color: 'default', icon: null };
+      
+    return <Tag color={levelInfo.color} icon={levelInfo.icon}>{level || 'unknown'}</Tag>;
   };
 
   return (
@@ -244,159 +277,180 @@ const AdminSystem: React.FC = () => {
           系统监控
         </Typography.Title>
 
-        {/* 系统状态概览 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} lg={8}>
-            <StatsCard>
-              <Space>
-                <CloudServerOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-                <div>
-                  <Typography.Text strong>服务器状态</Typography.Text>
-                  <div style={{ marginTop: 8 }}>
-                    {getStatusTag(systemStatus.server.status, 'server')}
-                  </div>
-                  <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                    运行时间: {formatUptime(systemStatus.server.uptime)}
-                  </Typography.Text>
-                </div>
-              </Space>
-            </StatsCard>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <StatsCard>
-              <Space>
-                <DatabaseOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
-                <div>
-                  <Typography.Text strong>数据库状态</Typography.Text>
-                  <div style={{ marginTop: 8 }}>
-                    {getStatusTag(systemStatus.database.status, 'database')}
-                  </div>
-                  <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                    连接数: {systemStatus.database.connections}
-                  </Typography.Text>
-                </div>
-              </Space>
-            </StatsCard>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <StatsCard>
-              <Space>
-                <WifiOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
-                <div>
-                  <Typography.Text strong>缓存状态</Typography.Text>
-                  <div style={{ marginTop: 8 }}>
-                    {getStatusTag(systemStatus.redis.status, 'redis')}
-                  </div>
-                  <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                    连接数: {systemStatus.redis.connections}
-                  </Typography.Text>
-                </div>
-              </Space>
-            </StatsCard>
-          </Col>
-        </Row>
-
-        {/* 内存和CPU使用情况 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} lg={12}>
-            <StatsCard title="内存使用情况">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div>
-                  <Typography.Text>堆内存使用: {formatMemory(systemStatus.server.memory.heapUsed)} / {formatMemory(systemStatus.server.memory.heapTotal)}</Typography.Text>
-                  <Progress 
-                    percent={Math.round((systemStatus.server.memory.heapUsed / systemStatus.server.memory.heapTotal) * 100)} 
-                    status="normal" 
-                  />
-                </div>
-                <div>
-                  <Typography.Text>总内存使用: {formatMemory(systemStatus.server.memory.rss)}</Typography.Text>
-                  <Progress 
-                    percent={Math.round((systemStatus.server.memory.rss / (systemStatus.server.memory.heapTotal * 2)) * 100)} 
-                    status="normal" 
-                  />
-                </div>
-              </Space>
-            </StatsCard>
-          </Col>
-          <Col xs={24} lg={12}>
-            <StatsCard title="CPU使用情况">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div>
-                  <Typography.Text>用户CPU时间: {systemStatus.server.cpu.user}</Typography.Text>
-                  <Progress 
-                    percent={Math.min(100, Math.round(systemStatus.server.cpu.user / 1000000))} 
-                    status="active" 
-                  />
-                </div>
-                <div>
-                  <Typography.Text>系统CPU时间: {systemStatus.server.cpu.system}</Typography.Text>
-                  <Progress 
-                    percent={Math.min(100, Math.round(systemStatus.server.cpu.system / 1000000))} 
-                    status="active" 
-                  />
-                </div>
-              </Space>
-            </StatsCard>
-          </Col>
-        </Row>
-
-        {/* 系统日志 */}
-        <LogCard 
-          title="系统日志" 
-          extra={
-            <Button 
-              icon={<ReloadOutlined />} 
-              onClick={() => loadSystemLogs(pagination.page)}
-              loading={loading}
-            >
-              刷新
-            </Button>
-          }
-        >
-          <Table
-            dataSource={logs}
-            columns={[
-              {
-                title: '时间',
-                dataIndex: 'timestamp',
-                key: 'timestamp',
-                render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
-              },
-              {
-                title: '级别',
-                dataIndex: 'level',
-                key: 'level',
-                render: (level: string) => getLogLevelTag(level)
-              },
-              {
-                title: '消息',
-                dataIndex: 'message',
-                key: 'message',
-                render: (message: string) => (
-                  <Typography.Text ellipsis={{ tooltip: message }} style={{ maxWidth: 300 }}>
-                    {message}
-                  </Typography.Text>
-                )
-              },
-              {
-                title: 'IP地址',
-                dataIndex: 'ip',
-                key: 'ip'
-              }
-            ]}
-            rowKey={(record, index) => index?.toString() || '0'}
-            pagination={{
-              current: pagination.page,
-              pageSize: pagination.limit,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条记录`,
-              onChange: (page) => loadSystemLogs(page)
-            }}
-            scroll={{ x: 800 }}
+        {error && (
+          <Alert 
+            message="错误" 
+            description={error} 
+            type="error" 
+            showIcon 
+            style={{ marginBottom: 24 }}
           />
-        </LogCard>
+        )}
+
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>正在加载系统状态...</div>
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* 系统状态概览 */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+              <Col xs={24} sm={12} lg={8}>
+                <StatsCard>
+                  <Space>
+                    <CloudServerOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                    <div>
+                      <Typography.Text strong>服务器状态</Typography.Text>
+                      <div style={{ marginTop: 8 }}>
+                        {getStatusTag(systemStatus?.server?.status || 'unknown', 'server')}
+                      </div>
+                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                        运行时间: {formatUptime(systemStatus?.server?.uptime || 0)}
+                      </Typography.Text>
+                    </div>
+                  </Space>
+                </StatsCard>
+              </Col>
+              <Col xs={24} sm={12} lg={8}>
+                <StatsCard>
+                  <Space>
+                    <DatabaseOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                    <div>
+                      <Typography.Text strong>数据库状态</Typography.Text>
+                      <div style={{ marginTop: 8 }}>
+                        {getStatusTag(systemStatus?.database?.status || 'unknown', 'database')}
+                      </div>
+                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                        连接数: {systemStatus?.database?.connections || 0}
+                      </Typography.Text>
+                    </div>
+                  </Space>
+                </StatsCard>
+              </Col>
+              <Col xs={24} sm={12} lg={8}>
+                <StatsCard>
+                  <Space>
+                    <WifiOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
+                    <div>
+                      <Typography.Text strong>缓存状态</Typography.Text>
+                      <div style={{ marginTop: 8 }}>
+                        {getStatusTag(systemStatus?.redis?.status || 'unknown', 'redis')}
+                      </div>
+                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                        连接数: {systemStatus?.redis?.connections || 0}
+                      </Typography.Text>
+                    </div>
+                  </Space>
+                </StatsCard>
+              </Col>
+            </Row>
+
+            {/* 内存和CPU使用情况 */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+              <Col xs={24} lg={12}>
+                <StatsCard title="内存使用情况">
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div>
+                      <Typography.Text>堆内存使用: {formatMemory(systemStatus?.server?.memory?.heapUsed || 0)} / {formatMemory(systemStatus?.server?.memory?.heapTotal || 0)}</Typography.Text>
+                      <Progress 
+                        percent={Math.round(((systemStatus?.server?.memory?.heapUsed || 0) / (systemStatus?.server?.memory?.heapTotal || 1)) * 100)} 
+                        status="normal" 
+                      />
+                    </div>
+                    <div>
+                      <Typography.Text>总内存使用: {formatMemory(systemStatus?.server?.memory?.rss || 0)}</Typography.Text>
+                      <Progress 
+                        percent={Math.round(((systemStatus?.server?.memory?.rss || 0) / ((systemStatus?.server?.memory?.heapTotal || 1) * 2)) * 100)} 
+                        status="normal" 
+                      />
+                    </div>
+                  </Space>
+                </StatsCard>
+              </Col>
+              <Col xs={24} lg={12}>
+                <StatsCard title="CPU使用情况">
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div>
+                      <Typography.Text>用户CPU时间: {(systemStatus?.server?.cpu?.user || 0).toFixed(2)}</Typography.Text>
+                      <Progress 
+                        percent={Math.min(100, Math.round((systemStatus?.server?.cpu?.user || 0) / 1000000))} 
+                        status="active" 
+                      />
+                    </div>
+                    <div>
+                      <Typography.Text>系统CPU时间: {(systemStatus?.server?.cpu?.system || 0).toFixed(2)}</Typography.Text>
+                      <Progress 
+                        percent={Math.min(100, Math.round((systemStatus?.server?.cpu?.system || 0) / 1000000))} 
+                        status="active" 
+                      />
+                    </div>
+                  </Space>
+                </StatsCard>
+              </Col>
+            </Row>
+
+            {/* 系统日志 */}
+            <LogCard 
+              title="系统日志" 
+              extra={
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  onClick={() => loadSystemLogs(pagination.page)}
+                  loading={loading}
+                >
+                  刷新
+                </Button>
+              }
+            >
+              <Table
+                dataSource={logs}
+                columns={[
+                  {
+                    title: '时间',
+                    dataIndex: 'timestamp',
+                    key: 'timestamp',
+                    render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
+                  },
+                  {
+                    title: '级别',
+                    dataIndex: 'level',
+                    key: 'level',
+                    render: (level: string) => getLogLevelTag(level)
+                  },
+                  {
+                    title: '消息',
+                    dataIndex: 'message',
+                    key: 'message',
+                    render: (message: string) => (
+                      <Typography.Text ellipsis={{ tooltip: message }} style={{ maxWidth: 300 }}>
+                        {message}
+                      </Typography.Text>
+                    )
+                  },
+                  {
+                    title: 'IP地址',
+                    dataIndex: 'ip',
+                    key: 'ip'
+                  }
+                ]}
+                rowKey={(record) => record.timestamp + record.message}
+                pagination={{
+                  current: pagination.page,
+                  pageSize: pagination.limit,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条记录`,
+                  onChange: (page) => loadSystemLogs(page)
+                }}
+                scroll={{ x: 800 }}
+              />
+            </LogCard>
+          </>
+        )}
       </motion.div>
     </AdminContainer>
   );

@@ -370,6 +370,58 @@ class AdminController {
     }
   }
 
+  // 获取消息列表
+  async getMessages(req, res) {
+    try {
+      const options = {
+        page: req.query.page || 1,
+        limit: req.query.limit || 10,
+        search: req.query.search,
+        messageType: req.query.messageType
+      };
+      
+      const result = await AdminService.getMessages(options);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 删除消息
+  async deleteMessage(req, res) {
+    try {
+      const { messageId } = req.params;
+
+      // 验证消息ID
+      if (!mongoose.isValidObjectId(messageId)) {
+        return res.status(400).json({
+          success: false,
+          message: '无效的消息ID'
+        });
+      }
+
+      const result = await AdminService.deleteMessage(messageId);
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      const statusCode = error.message === '消息不存在' ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   // 获取系统日志
   async getSystemLogs(req, res) {
     try {

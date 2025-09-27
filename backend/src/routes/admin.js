@@ -282,21 +282,26 @@ router.get('/messages',
   authenticateAdmin,
   requireAdmin,
   paginationValidation,
+  query('search')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('搜索关键词不能为空'),
+  query('messageType')
+    .optional()
+    .isIn(['text', 'file', 'image', 'video', 'audio', 'system'])
+    .withMessage('无效的消息类型'),
   logAdminAction('view_messages'),
-  async (req, res) => {
-    try {
-      // TODO: 实现消息管理逻辑
-      res.json({
-        success: true,
-        message: '消息管理功能正在开发中'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
+  AdminController.getMessages
+);
+
+// 删除消息
+router.delete('/messages/:messageId', 
+  authenticateAdmin,
+  requireAdmin,
+  param('messageId').isMongoId().withMessage('无效的消息ID'),
+  logAdminAction('delete_message'),
+  AdminController.deleteMessage
 );
 
 // ==================== 系统管理路由 ====================

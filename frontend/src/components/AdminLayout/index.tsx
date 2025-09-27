@@ -111,6 +111,52 @@ const NotificationBadge = styled(Badge)`
   }
 `;
 
+const UserInfoSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(102, 126, 234, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 36px;
+  max-width: 160px; // 减小最大宽度以适应导航栏
+`;
+
+const UserAvatar = styled(Avatar)`
+  border: 2px solid #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-weight: 600;
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 1; // 允许收缩
+`;
+
+const UserName = styled.div`
+  font-weight: 600;
+  color: #1a365d;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2; // 调整行高
+`;
+
+const UserRole = styled.div`
+  font-size: 10px;
+  color: #667eea;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2; // 调整行高
+`;
+
 const AdminContent = styled(Content)`
   margin: 24px;
   min-height: calc(100vh - 112px);
@@ -133,15 +179,45 @@ const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const adminToken = localStorage.getItem('adminToken');
   
   useEffect(() => {
+    console.log('AdminGuard - Checking admin token:', adminToken);
+    
     if (!adminToken) {
+      console.log('AdminGuard - No admin token found, redirecting to login');
       navigate('/admin/login');
+      return;
+    }
+    
+    try {
+      // 验证token是否有效
+      const payload = JSON.parse(atob(adminToken.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      // 如果token已过期，清除并跳转到登录页
+      if (payload.exp && payload.exp < currentTime) {
+        console.log('AdminGuard - Admin token expired, redirecting to login');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        navigate('/admin/login');
+        return;
+      }
+      
+      console.log('AdminGuard - Admin token is valid');
+    } catch (error) {
+      // 如果token解析失败，清除并跳转到登录页
+      console.log('AdminGuard - Admin token invalid, redirecting to login', error);
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      navigate('/admin/login');
+      return;
     }
   }, [adminToken, navigate]);
   
   if (!adminToken) {
+    console.log('AdminGuard - Rendering null because no token');
     return null;
   }
   
+  console.log('AdminGuard - Rendering children');
   return <>{children}</>;
 };
 
@@ -306,21 +382,21 @@ const AdminLayoutComponent: React.FC = () => {
                 placement="bottomRight"
                 arrow
               >
-                <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
-                  <Avatar 
+                <UserInfoSection>
+                  <UserAvatar 
                     icon={<UserOutlined />} 
-                    size="small"
-                    style={{ background: '#667eea' }}
+                    size={28}
+                    src={adminUser.avatar || null}
                   />
-                  <div>
-                    <div style={{ fontWeight: 500, color: '#1a365d' }}>
+                  <UserInfo>
+                    <UserName title={adminUser.username || 'Admin'}>
                       {adminUser.username || 'Admin'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
+                    </UserName>
+                    <UserRole title="系统管理员">
                       系统管理员
-                    </div>
-                  </div>
-                </Space>
+                    </UserRole>
+                  </UserInfo>
+                </UserInfoSection>
               </Dropdown>
             </UserSection>
           </AdminHeader>

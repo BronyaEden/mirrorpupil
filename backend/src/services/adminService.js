@@ -331,6 +331,76 @@ class AdminService {
     return { message: '文件恢复成功' };
   }
 
+  // 获取消息列表
+  async getMessages(options = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      messageType
+    } = options;
+
+    // 构建查询条件
+    const query = {};
+    if (search) {
+      query.content = { $regex: search, $options: 'i' };
+    }
+    if (messageType) {
+      query.messageType = messageType;
+    }
+
+    const skip = (page - 1) * limit;
+    
+    // 获取消息列表，填充发送者信息
+    const messages = await Message.find(query)
+      .populate('senderId', 'username email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Message.countDocuments(query);
+
+    return {
+      messages: messages.map(msg => ({
+        _id: msg._id,
+        content: msg.content,
+        senderId: msg.senderId,
+        sender: msg.senderId ? {
+          username: msg.senderId.username,
+          email: msg.senderId.email
+        } : null,
+        conversationId: msg.conversationId,
+        messageType: msg.messageType,
+        createdAt: msg.createdAt,
+        updatedAt: msg.updatedAt
+      })),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  // 删除消息
+  async deleteMessage(messageId) {
+    const message = await Message.findById(messageId);
+    
+    if (!message) {
+      throw new Error('消息不存在');
+    }
+
+    // 软删除消息
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+    message.content = '此消息已被管理员删除';
+    
+    await message.save();
+
+    return { message: '消息删除成功' };
+  }
+
   // 获取系统状态
   async getSystemStatus() {
     // 获取用户统计

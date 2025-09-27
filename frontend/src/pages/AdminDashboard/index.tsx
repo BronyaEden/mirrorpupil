@@ -46,6 +46,7 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import adminAPI from '../../utils/api/admin';
 
 // 初始化 dayjs
 dayjs.extend(relativeTime);
@@ -148,7 +149,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [form] = Form.useForm();
 
-  // 模拟数据加载
+  // 数据加载
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -158,6 +159,7 @@ const AdminDashboard: React.FC = () => {
     try {
       // 调用真实的API获取数据
       const response = await adminAPI.getDashboardStats();
+      console.log('Dashboard stats response:', response.data.data);
       const data = response.data.data;
       
       setDashboardStats({
@@ -173,70 +175,29 @@ const AdminDashboard: React.FC = () => {
 
       // 加载真实的用户数据
       const userResponse = await adminAPI.getUsers({ page: 1, limit: 5 });
+      console.log('Users response:', userResponse.data.data);
       setUsers(userResponse.data.data.users);
 
       // 加载真实的文件数据
       const fileResponse = await adminAPI.getFiles({ page: 1, limit: 5 });
+      console.log('Files response:', fileResponse.data.data);
       setFiles(fileResponse.data.data.files);
     } catch (error) {
       console.error('加载数据失败:', error);
-      // 如果API调用失败，使用模拟数据
+      // 如果API调用失败，显示错误信息
       setDashboardStats({
-        totalUsers: 1258,
-        totalFiles: 3467,
-        totalMessages: 8924,
-        totalViews: 45672,
-        totalDownloads: 12334,
-        activeUsers: 187,
-        storageUsed: 2.34, // GB
-        serverStatus: 'online'
+        totalUsers: 0,
+        totalFiles: 0,
+        totalMessages: 0,
+        totalViews: 0,
+        totalDownloads: 0,
+        activeUsers: 0,
+        storageUsed: 0,
+        serverStatus: 'offline'
       });
-
-      // 模拟用户数据
-      setUsers([
-        {
-          _id: '1',
-          username: 'admin',
-          email: 'admin@example.com',
-          avatar: '',
-          role: 'admin',
-          isActive: true,
-          createdAt: '2024-01-01T00:00:00Z',
-          lastLoginAt: '2024-03-20T10:30:00Z',
-          loginCount: 245,
-          fileCount: 12
-        },
-        {
-          _id: '2',
-          username: 'testuser',
-          email: 'test@example.com',
-          avatar: '',
-          role: 'user',
-          isActive: true,
-          createdAt: '2024-02-15T00:00:00Z',
-          lastLoginAt: '2024-03-19T15:20:00Z',
-          loginCount: 56,
-          fileCount: 8
-        }
-      ]);
-
-      // 模拟文件数据
-      setFiles([
-        {
-          _id: '1',
-          filename: 'document.pdf',
-          displayName: '重要文档.pdf',
-          fileType: 'document',
-          fileSize: 2048576,
-          uploaderId: '2',
-          uploaderName: 'testuser',
-          downloadCount: 45,
-          viewCount: 128,
-          likeCount: 12,
-          isPublic: true,
-          createdAt: '2024-03-18T14:30:00Z'
-        }
-      ]);
+      
+      setUsers([]);
+      setFiles([]);
     } finally {
       setLoading(false);
     }
@@ -524,7 +485,7 @@ const AdminDashboard: React.FC = () => {
             <StatsCard>
               <Statistic
                 title="存储使用"
-                value={dashboardStats.storageUsed}
+                value={dashboardStats.storageUsed.toFixed(6)} // 保留6位小数
                 suffix="GB"
                 prefix={<DatabaseOutlined style={{ color: '#722ed1' }} />}
               />

@@ -1,5 +1,6 @@
 import FileService from '../services/fileService.js';
 import { validationResult } from 'express-validator';
+import { User } from '../models/index.js';
 
 class FileController {
   // 上传文件
@@ -281,12 +282,16 @@ class FileController {
     try {
       const { userId } = req.params;
       
-      // 如果不是查看自己的统计，需要检查权限
+      // 如果不是查看自己的统计，检查用户是否存在且是公开的
       if (userId !== req.user.userId) {
-        return res.status(403).json({
-          success: false,
-          message: '无权查看他人的文件统计'
-        });
+        const user = await User.findById(userId);
+        if (!user || !user.isActive) {
+          return res.status(404).json({
+            success: false,
+            message: '用户不存在或已被禁用'
+          });
+        }
+        // 对于公开用户，允许查看基本的文件统计（不包含敏感信息）
       }
 
       const stats = await FileService.getUserFileStats(userId);

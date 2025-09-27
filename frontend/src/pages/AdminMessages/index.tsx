@@ -140,30 +140,21 @@ const AdminMessages: React.FC = () => {
   const loadMessages = async (page: number = 1, filters: any = {}) => {
     setLoading(true);
     try {
-      // 注意：这里需要实现消息管理API
-      // 暂时使用模拟数据
-      const mockMessages: MessageData[] = [
-        {
-          _id: '1',
-          content: '你好，这是一个测试消息',
-          senderId: 'user1',
-          sender: {
-            username: 'testuser',
-            email: 'test@example.com'
-          },
-          conversationId: 'conv1',
-          messageType: 'text',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+      const params = {
+        page,
+        limit: pagination.limit,
+        ...filters
+      };
       
-      setMessages(mockMessages);
+      const response = await adminAPI.getMessages(params);
+      const data = response.data.data;
+      
+      setMessages(data.messages);
       setPagination({
-        page: 1,
-        limit: 10,
-        total: mockMessages.length,
-        pages: 1
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        total: data.pagination.total,
+        pages: data.pagination.pages
       });
     } catch (error) {
       console.error('加载消息失败:', error);
@@ -186,7 +177,7 @@ const AdminMessages: React.FC = () => {
   // 删除消息
   const handleDeleteMessage = async (messageId: string) => {
     try {
-      // TODO: 实现删除消息API
+      await adminAPI.deleteMessage(messageId);
       message.success('消息删除成功');
       await loadMessages(pagination.page);
     } catch (error) {

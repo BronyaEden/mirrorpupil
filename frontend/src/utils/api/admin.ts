@@ -26,11 +26,15 @@ adminApi.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('Admin API Error:', error);
     if (error.response?.status === 401 || error.response?.status === 403) {
       // 清除管理员令牌并跳转到登录页
+      console.log('Admin API - Unauthorized, redirecting to login');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      window.location.href = '/admin/login';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/admin/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -88,8 +92,12 @@ const adminAPI = {
     page?: number;
     limit?: number;
     search?: string;
+    messageType?: string;
   }) =>
     adminApi.get('/admin/messages', { params }),
+
+  deleteMessage: (messageId: string) =>
+    adminApi.delete(`/admin/messages/${messageId}`),
 
   // 系统管理
   getSystemLogs: (params: {

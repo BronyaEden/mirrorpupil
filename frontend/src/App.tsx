@@ -88,7 +88,12 @@ const App: React.FC = () => {
             <Router>
               <Routes>
                 {/* 管理后台路由 */}
-                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/login" element={
+                  <>
+                    {/* 管理后台登录页面不使用全局鼠标特效 */}
+                    <AdminLogin />
+                  </>
+                } />
                 <Route path="/admin" element={
                   <>
                     {/* 全局鼠标特效 - 应用于管理后台 */}
