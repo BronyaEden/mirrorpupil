@@ -244,16 +244,16 @@ node health-check.js
 > 注：实际界面可能与截图有所差异，以最新版本为准
 
 ### 首页
-![首页](./docs/screenshots/homepage.png)
+![首页](./screenshots/homepage.png)
 
 ### 文件浏览
-![文件浏览](./docs/screenshots/file-explorer.png)
+![文件浏览](./screenshots/file-explorer.png)
 
 ### 聊天界面
-![聊天界面](./docs/screenshots/chat.png)
+![聊天界面](./screenshots/chat.png)
 
 ### 管理后台
-![管理后台](./docs/screenshots/admin-dashboard.png)
+![管理后台](./screenshots/admin-dashboard.png)
 
 ## 🎯 开发状态
 
