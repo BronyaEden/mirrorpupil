@@ -96,6 +96,7 @@ interface UserData {
   _id: string;
   username: string;
   email: string;
+  password: string;
   avatar: string;
   role: 'user' | 'admin' | 'moderator';
   isActive: boolean;
@@ -117,8 +118,19 @@ const AdminUsers: React.FC = () => {
     total: 0,
     pages: 0
   });
+  // 切换用户状态
+  const handleToggleUserStatus = async (user: UserData) => {
+    try {
+      await adminAPI.toggleUserStatus(user._id);
+      await loadUsers(pagination.page);
+    } catch (error) {
+      console.error('切换用户状态失败:', error);
+    }
+  };
+
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [editFormInitialValues, setEditFormInitialValues] = useState<Partial<UserData>>({});
   const [searchForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const [stats, setStats] = useState({
@@ -141,8 +153,8 @@ const AdminUsers: React.FC = () => {
       setStats({
         total: data.users.total,
         active: data.users.active,
-        admins: 0, // 需要从后端获取
-        moderators: 0 // 需要从后端获取
+        admins: data.users.admins, // 修复：从后端获取管理员数量
+        moderators: data.users.moderators // 修复：从后端获取版主数量
       });
     } catch (error) {
       console.error('加载统计失败:', error);
@@ -186,25 +198,14 @@ const AdminUsers: React.FC = () => {
     loadUsers(1);
   };
 
-  // 切换用户状态
-  const handleToggleUserStatus = async (user: UserData) => {
-    try {
-      await adminAPI.toggleUserStatus(user._id);
-      await loadUsers(pagination.page);
-    } catch (error) {
-      console.error('切换用户状态失败:', error);
-    }
-  };
+
 
   // 处理编辑用户
   const handleEditUser = (user: UserData) => {
+    console.log('编辑用户数据:', user);
     setSelectedUser(user);
-    editForm.setFieldsValue({
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive
-    });
+    
+    // 打开模态框
     setEditModalVisible(true);
   };
 
@@ -322,18 +323,6 @@ const AdminUsers: React.FC = () => {
               icon={<EditOutlined />}
               onClick={() => handleEditUser(record)}
             />
-          </Tooltip>
-          <Tooltip title={record.isActive ? "禁用用户" : "启用用户"}>
-            <Popconfirm
-              title={`确定${record.isActive ? '禁用' : '启用'}该用户？`}
-              onConfirm={() => handleToggleUserStatus(record)}
-            >
-              <Button 
-                danger={record.isActive}
-                size="small" 
-                icon={record.isActive ? <DeleteOutlined /> : <CheckCircleOutlined />}
-              />
-            </Popconfirm>
           </Tooltip>
           <Tooltip title="删除用户">
             <Popconfirm
@@ -479,9 +468,27 @@ const AdminUsers: React.FC = () => {
             setEditModalVisible(false);
             editForm.resetFields();
             setSelectedUser(null);
+            setEditFormInitialValues({});
           }}
           onOk={() => editForm.submit()}
           width={600}
+          afterOpenChange={(open) => {
+            if (open && selectedUser) {
+              // 模态框打开后设置表单字段值
+              const fieldValues = {
+                username: selectedUser.username,
+                email: selectedUser.email,
+                password: selectedUser.password || '',
+                role: selectedUser.role,
+                isActive: selectedUser.isActive
+              };
+              
+              // 延迟设置字段值，确保组件完全渲染
+              setTimeout(() => {
+                editForm.setFieldsValue(fieldValues);
+              }, 100);
+            }
+          }}
         >
           <Form
             form={editForm}
@@ -514,6 +521,17 @@ const AdminUsers: React.FC = () => {
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
+                  name="password"
+                  label="用户密码"
+                >
+                  <Input />
+                  <div style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
+                    注意：显示的是加密后的密码，如需修改请直接输入新密码
+                  </div>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
                   name="role"
                   label="角色"
                   rules={[{ required: true, message: '请选择角色' }]}
@@ -525,15 +543,15 @@ const AdminUsers: React.FC = () => {
                   </Select>
                 </Form.Item>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   name="isActive"
-                  label="状态"
+                  label="用户状态"
+                  valuePropName="checked"
                 >
-                  <Select>
-                    <Option value={true}>启用</Option>
-                    <Option value={false}>禁用</Option>
-                  </Select>
+                  <Switch checkedChildren="启用" unCheckedChildren="禁用" />
                 </Form.Item>
               </Col>
             </Row>

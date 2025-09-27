@@ -326,7 +326,7 @@ export const GlobalStyles = createGlobalStyle`
   .ant-input, .ant-input-password {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    color: #FFFFFF;
+    color: #CCCCCC;
     backdrop-filter: blur(10px);
     font-weight: 500;
     

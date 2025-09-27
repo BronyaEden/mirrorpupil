@@ -303,7 +303,40 @@ class FileService {
     // 更新用户文件统计
     await this.updateUserFileStats(uploaderId);
     
-    return { message: '文件删除成功' };
+    return { message: '文件已删除，12小时内可恢复' };
+  }
+
+  // 恢复被软删除的文件
+  async restoreFile(fileId) {
+    const file = await File.findById(fileId);
+    
+    if (!file) {
+      throw new Error('文件不存在');
+    }
+    
+    // 检查文件是否已被删除
+    if (file.isActive) {
+      throw new Error('文件未被删除');
+    }
+    
+    // 检查是否超过12小时恢复期限
+    const deletedTime = new Date(file.deletedAt);
+    const currentTime = new Date();
+    const hoursSinceDeletion = (currentTime - deletedTime) / (1000 * 60 * 60);
+    
+    if (hoursSinceDeletion > 12) {
+      throw new Error('文件已超过12小时恢复期限，无法恢复');
+    }
+    
+    // 恢复文件
+    file.isActive = true;
+    file.deletedAt = null;
+    await file.save();
+    
+    // 更新用户文件统计
+    await this.updateUserFileStats(file.uploaderId);
+    
+    return { message: '文件恢复成功' };
   }
 
   // 更新文件信息

@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, param, query } from 'express-validator';
 import AdminController from '../controllers/adminController.js';
-import { authenticateAdmin, requireSuperAdmin, logAdminAction } from '../middleware/adminAuth.js';
+import { authenticateAdmin, requireAdmin, logAdminAction } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
@@ -36,6 +36,24 @@ const updateUserValidation = [
     .optional()
     .isBoolean()
     .withMessage('isActive必须是布尔值')
+];
+
+// 创建用户验证规则
+const createUserValidation = [
+  body('username')
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('用户名长度必须在3-30个字符之间'),
+  body('email')
+    .isEmail()
+    .withMessage('请输入有效的邮箱地址'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('密码至少需要6个字符'),
+  body('role')
+    .optional()
+    .isIn(['user', 'admin', 'moderator'])
+    .withMessage('无效的用户角色')
 ];
 
 // 分页验证规则
@@ -156,9 +174,28 @@ router.get('/users',
   AdminController.getUsers
 );
 
+// 创建新用户
+router.post('/users', 
+  authenticateAdmin,
+  requireAdmin,
+  createUserValidation,
+  logAdminAction('create_user'),
+  AdminController.createUser
+);
+
+// 获取用户详细信息
+router.get('/users/:userId', 
+  authenticateAdmin,
+  requireAdmin,
+  userIdValidation,
+  logAdminAction('view_user'),
+  AdminController.getUserById
+);
+
 // 更新用户信息
 router.put('/users/:userId', 
   authenticateAdmin,
+  requireAdmin,
   updateUserValidation,
   logAdminAction('update_user'),
   AdminController.updateUser
@@ -167,6 +204,7 @@ router.put('/users/:userId',
 // 切换用户状态（启用/禁用）
 router.patch('/users/:userId/toggle-status', 
   authenticateAdmin,
+  requireAdmin,
   userIdValidation,
   logAdminAction('toggle_user_status'),
   AdminController.toggleUserStatus
@@ -175,27 +213,10 @@ router.patch('/users/:userId/toggle-status',
 // 删除用户（仅超级管理员）
 router.delete('/users/:userId', 
   authenticateAdmin,
-  requireSuperAdmin,
+  requireAdmin,
   userIdValidation,
   logAdminAction('delete_user'),
-  async (req, res) => {
-    try {
-      const { userId } = req.params;
-      
-      // TODO: 实现用户删除逻辑
-      // 需要级联删除用户的文件、消息等数据
-      
-      res.json({
-        success: true,
-        message: '用户删除功能正在开发中'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
+  AdminController.deleteUser
 );
 
 // ==================== 文件管理路由 ====================
@@ -203,6 +224,7 @@ router.delete('/users/:userId',
 // 获取文件列表
 router.get('/files', 
   authenticateAdmin,
+  requireAdmin,
   paginationValidation,
   query('search')
     .optional()
@@ -224,6 +246,7 @@ router.get('/files',
 // 删除文件
 router.delete('/files/:fileId', 
   authenticateAdmin,
+  requireAdmin,
   fileIdValidation,
   logAdminAction('delete_file'),
   AdminController.deleteFile
@@ -232,30 +255,24 @@ router.delete('/files/:fileId',
 // 批量删除文件
 router.delete('/files', 
   authenticateAdmin,
+  requireAdmin,
   body('fileIds')
-    .isArray({ min: 1 })
-    .withMessage('请提供要删除的文件ID列表'),
+    .isArray({ min: 1, max: 100 })
+    .withMessage('请提供要删除的文件ID列表（最多100个）'),
   body('fileIds.*')
     .isMongoId()
     .withMessage('文件ID格式不正确'),
   logAdminAction('batch_delete_files'),
-  async (req, res) => {
-    try {
-      const { fileIds } = req.body;
-      
-      // TODO: 实现批量删除文件逻辑
-      
-      res.json({
-        success: true,
-        message: '批量删除文件功能正在开发中'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
+  AdminController.batchDeleteFiles
+);
+
+// 恢复已删除文件
+router.patch('/files/:fileId/restore', 
+  authenticateAdmin,
+  requireAdmin,
+  fileIdValidation,
+  logAdminAction('restore_file'),
+  AdminController.restoreFile
 );
 
 // ==================== 消息管理路由 ====================
@@ -263,6 +280,7 @@ router.delete('/files',
 // 获取消息列表
 router.get('/messages', 
   authenticateAdmin,
+  requireAdmin,
   paginationValidation,
   logAdminAction('view_messages'),
   async (req, res) => {
@@ -286,6 +304,7 @@ router.get('/messages',
 // 获取系统日志
 router.get('/system/logs', 
   authenticateAdmin,
+  requireAdmin,
   paginationValidation,
   query('level')
     .optional()
@@ -306,36 +325,9 @@ router.get('/system/logs',
 // 获取系统状态
 router.get('/system/status', 
   authenticateAdmin,
+  requireAdmin,
   logAdminAction('view_system_status'),
-  async (req, res) => {
-    try {
-      const systemStatus = {
-        server: {
-          status: 'online',
-          uptime: process.uptime(),
-          memory: process.memoryUsage(),
-          cpu: process.cpuUsage()
-        },
-        database: {
-          status: 'connected', // TODO: 实际检查数据库连接状态
-          connections: 'unknown'
-        },
-        redis: {
-          status: 'unknown' // TODO: 检查Redis连接状态
-        }
-      };
-
-      res.json({
-        success: true,
-        data: systemStatus
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
+  AdminController.getSystemStatus
 );
 
 // ==================== 设置管理路由 ====================
@@ -343,6 +335,7 @@ router.get('/system/status',
 // 获取系统设置
 router.get('/settings', 
   authenticateAdmin,
+  requireAdmin,
   logAdminAction('view_settings'),
   async (req, res) => {
     try {
@@ -382,7 +375,7 @@ router.get('/settings',
 // 更新系统设置
 router.put('/settings', 
   authenticateAdmin,
-  requireSuperAdmin,
+  requireAdmin,
   logAdminAction('update_settings'),
   async (req, res) => {
     try {

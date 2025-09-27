@@ -9,7 +9,8 @@ describe('ImageController', () => {
 
   beforeEach(() => {
     req = {
-      params: {}
+      params: {},
+      get: jest.fn().mockReturnValue('localhost:3000') // 修复：添加get方法的模拟并返回值
     };
     
     res = {

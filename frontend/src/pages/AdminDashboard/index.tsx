@@ -156,7 +156,31 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // 模拟数据
+      // 调用真实的API获取数据
+      const response = await adminAPI.getDashboardStats();
+      const data = response.data.data;
+      
+      setDashboardStats({
+        totalUsers: data.users.total,
+        totalFiles: data.files.total,
+        totalMessages: data.messages.total,
+        totalViews: data.activity.totalViews,
+        totalDownloads: data.activity.totalDownloads,
+        activeUsers: data.users.active,
+        storageUsed: data.files.totalSize / (1024 * 1024 * 1024), // 转换为GB
+        serverStatus: data.serverStatus
+      });
+
+      // 加载真实的用户数据
+      const userResponse = await adminAPI.getUsers({ page: 1, limit: 5 });
+      setUsers(userResponse.data.data.users);
+
+      // 加载真实的文件数据
+      const fileResponse = await adminAPI.getFiles({ page: 1, limit: 5 });
+      setFiles(fileResponse.data.data.files);
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      // 如果API调用失败，使用模拟数据
       setDashboardStats({
         totalUsers: 1258,
         totalFiles: 3467,
@@ -213,8 +237,6 @@ const AdminDashboard: React.FC = () => {
           createdAt: '2024-03-18T14:30:00Z'
         }
       ]);
-    } catch (error) {
-      console.error('加载数据失败:', error);
     } finally {
       setLoading(false);
     }

@@ -30,7 +30,12 @@ const userSchema = new Schema({
   avatar: {
     type: Schema.Types.ObjectId,
     ref: 'Image',
-    default: null
+    default: null,
+    set: function(v) {
+      // 如果传入的是空字符串，则转换为null
+      if (v === '') return null;
+      return v;
+    }
   },
   coverImage: {
     type: Schema.Types.ObjectId,
@@ -127,6 +132,8 @@ const userSchema = new Schema({
   toJSON: { 
     virtuals: true,
     transform: function(doc, ret) {
+      // 为管理员保留密码字段，普通用户查询时删除密码
+      // 管理员查询会在服务层处理，这里保持原逻辑
       delete ret.password;
       return ret;
     }
@@ -142,6 +149,18 @@ userSchema.virtual('followersCount').get(function() {
 // 虚拟字段：关注数量
 userSchema.virtual('followingCount').get(function() {
   return this.following ? this.following.length : 0;
+});
+
+// 虚拟字段：管理员数量统计
+userSchema.virtual('adminCount').get(function() {
+  // 这个虚拟字段将在服务层计算，而不是在模型中
+  return 0;
+});
+
+// 虚拟字段：版主数量统计
+userSchema.virtual('moderatorCount').get(function() {
+  // 这个虚拟字段将在服务层计算，而不是在模型中
+  return 0;
 });
 
 // 密码加密中间件

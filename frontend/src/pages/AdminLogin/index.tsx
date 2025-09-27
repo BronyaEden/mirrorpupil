@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import adminAPI from '../../utils/api/admin';
 
 // 样式组件
 const AdminLoginContainer = styled.div`
@@ -111,24 +112,24 @@ const AdminLogin: React.FC = () => {
     setError('');
     
     try {
-      // 模拟管理员登录验证
-      // TODO: 替换为实际的API调用
-      if (values.username === 'admin' && values.password === 'admin123') {
+      // 调用实际的管理员登录API
+      const response = await adminAPI.login({
+        username: values.username,
+        password: values.password
+      });
+      
+      if (response.data.success) {
         // 设置管理员会话
-        localStorage.setItem('adminToken', 'admin-jwt-token');
-        localStorage.setItem('adminUser', JSON.stringify({
-          id: 'admin',
-          username: 'admin',
-          role: 'admin'
-        }));
+        localStorage.setItem('adminToken', response.data.data.token);
+        localStorage.setItem('adminUser', JSON.stringify(response.data.data.admin));
         
         // 跳转到管理后台
         navigate('/admin/dashboard');
       } else {
-        setError('用户名或密码错误');
+        setError(response.data.message || '登录失败');
       }
-    } catch (err) {
-      setError('登录失败，请稍后重试');
+    } catch (err: any) {
+      setError(err.response?.data?.message || '登录失败，请稍后重试');
     } finally {
       setLoading(false);
     }

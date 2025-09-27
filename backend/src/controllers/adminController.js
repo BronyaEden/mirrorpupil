@@ -1,5 +1,6 @@
 import { User, File, Message, Conversation } from '../models/index.js';
 import FileService from '../services/fileService.js';
+import AdminService from '../services/adminService.js';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -41,7 +42,7 @@ class AdminController {
           isAdmin: true
         },
         process.env.JWT_SECRET,
-        { expiresIn: '8h' } // 管理员token有效期8小时
+        { expiresIn: '24h' } // 管理员token有效期24小时
       );
 
       // 更新登录信息
@@ -72,63 +73,12 @@ class AdminController {
   // 获取仪表板统计数据
   async getDashboardStats(req, res) {
     try {
-      // 获取用户统计
-      const totalUsers = await User.countDocuments();
-      const activeUsers = await User.countDocuments({ 
-        lastLoginAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      });
-      const newUsersToday = await User.countDocuments({
-        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      });
-
-      // 获取文件统计
-      const totalFiles = await File.countDocuments();
-      const totalFileSize = await File.aggregate([
-        { $group: { _id: null, totalSize: { $sum: '$fileSize' } } }
-      ]);
-      const publicFiles = await File.countDocuments({ isPublic: true });
-      const filesUploadedToday = await File.countDocuments({
-        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      });
-
-      // 获取消息统计
-      const totalMessages = await Message.countDocuments();
-      const totalConversations = await Conversation.countDocuments();
-      const messagesToday = await Message.countDocuments({
-        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      });
-
-      // 获取活动统计
-      const totalDownloads = await File.aggregate([
-        { $group: { _id: null, totalDownloads: { $sum: '$downloadCount' } } }
-      ]);
-      const totalViews = await File.aggregate([
-        { $group: { _id: null, totalViews: { $sum: '$viewCount' } } }
-      ]);
-
+      const stats = await AdminService.getSystemStatus();
+      
       res.json({
         success: true,
         data: {
-          users: {
-            total: totalUsers,
-            active: activeUsers,
-            newToday: newUsersToday
-          },
-          files: {
-            total: totalFiles,
-            public: publicFiles,
-            uploadedToday: filesUploadedToday,
-            totalSize: totalFileSize[0]?.totalSize || 0
-          },
-          messages: {
-            total: totalMessages,
-            conversations: totalConversations,
-            today: messagesToday
-          },
-          activity: {
-            totalDownloads: totalDownloads[0]?.totalDownloads || 0,
-            totalViews: totalViews[0]?.totalViews || 0
-          },
+          ...stats,
           serverStatus: 'online'
         }
       });
@@ -143,58 +93,74 @@ class AdminController {
   // 获取用户列表
   async getUsers(req, res) {
     try {
-      const { page = 1, limit = 10, search, role, isActive } = req.query;
+      const options = {
+        page: req.query.page || 1,
+        limit: req.query.limit || 10,
+        search: req.query.search,
+        role: req.query.role,
+        isActive: req.query.isActive
+      };
       
-      // 构建查询条件
-      const query = {};
-      if (search) {
-        query.$or = [
-          { username: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
-        ];
-      }
-      if (role) {
-        query.role = role;
-      }
-      if (isActive !== undefined) {
-        query.isActive = isActive === 'true';
-      }
-
-      const skip = (page - 1) * limit;
-      
-      // 获取用户列表
-      const users = await User.find(query)
-        .populate('followers', 'username')
-        .populate('following', 'username')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-      // 获取每个用户的文件数量
-      const usersWithStats = await Promise.all(users.map(async (user) => {
-        const fileCount = await File.countDocuments({ uploaderId: user._id });
-        return {
-          ...user.toObject(),
-          fileCount
-        };
-      }));
-
-      const total = await User.countDocuments(query);
+      const result = await AdminService.getUsers(options);
 
       res.json({
         success: true,
-        data: {
-          users: usersWithStats,
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            pages: Math.ceil(total / limit)
-          }
-        }
+        data: result
       });
     } catch (error) {
       res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 创建新用户
+  async createUser(req, res) {
+    try {
+      const user = await AdminService.createUser(req.body);
+
+      // 返回用户信息（包括密码）
+      const userObj = user.toObject();
+      // 注意：这里我们不删除密码字段，以便管理员可以查看密码
+      // 在实际生产环境中，这可能是一个安全风险，需要谨慎处理
+
+      res.status(201).json({
+        success: true,
+        message: '用户创建成功',
+        data: { user: userObj }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 获取用户详细信息
+  async getUserById(req, res) {
+    try {
+      const { userId } = req.params;
+
+      // 验证用户ID
+      if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({
+          success: false,
+          message: '无效的用户ID'
+        });
+      }
+
+      const user = await AdminService.getUserById(userId);
+      
+      // 返回用户详细信息（包括密码）
+      res.json({
+        success: true,
+        data: { user }
+      });
+    } catch (error) {
+      const statusCode = error.message === '用户不存在' ? 404 : 500;
+      res.status(statusCode).json({
         success: false,
         message: error.message
       });
@@ -205,7 +171,6 @@ class AdminController {
   async updateUser(req, res) {
     try {
       const { userId } = req.params;
-      const updates = req.body;
 
       // 验证用户ID
       if (!mongoose.isValidObjectId(userId)) {
@@ -215,22 +180,7 @@ class AdminController {
         });
       }
 
-      // 不允许修改密码通过此接口
-      delete updates.password;
-      delete updates._id;
-
-      const user = await User.findByIdAndUpdate(
-        userId,
-        { $set: updates },
-        { new: true, runValidators: true }
-      );
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: '用户不存在'
-        });
-      }
+      const user = await AdminService.updateUser(userId, req.body);
 
       res.json({
         success: true,
@@ -238,7 +188,8 @@ class AdminController {
         data: { user }
       });
     } catch (error) {
-      res.status(500).json({
+      const statusCode = error.message === '用户不存在' ? 404 : 500;
+      res.status(statusCode).json({
         success: false,
         message: error.message
       });
@@ -250,16 +201,15 @@ class AdminController {
     try {
       const { userId } = req.params;
 
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({
+      // 验证用户ID
+      if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({
           success: false,
-          message: '用户不存在'
+          message: '无效的用户ID'
         });
       }
 
-      user.isActive = !user.isActive;
-      await user.save();
+      const user = await AdminService.toggleUserStatus(userId);
 
       res.json({
         success: true,
@@ -267,7 +217,36 @@ class AdminController {
         data: { user }
       });
     } catch (error) {
-      res.status(500).json({
+      const statusCode = error.message === '用户不存在' ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 删除用户
+  async deleteUser(req, res) {
+    try {
+      const { userId } = req.params;
+
+      // 验证用户ID
+      if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({
+          success: false,
+          message: '无效的用户ID'
+        });
+      }
+
+      const result = await AdminService.deleteUser(userId);
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      const statusCode = error.message === '用户不存在' ? 404 : 500;
+      res.status(statusCode).json({
         success: false,
         message: error.message
       });
@@ -277,44 +256,19 @@ class AdminController {
   // 获取文件列表
   async getFiles(req, res) {
     try {
-      const { page = 1, limit = 10, search, fileType, isPublic } = req.query;
+      const options = {
+        page: req.query.page || 1,
+        limit: req.query.limit || 10,
+        search: req.query.search,
+        fileType: req.query.fileType,
+        isPublic: req.query.isPublic
+      };
       
-      // 构建查询条件
-      const query = {};
-      if (search) {
-        query.$or = [
-          { filename: { $regex: search, $options: 'i' } },
-          { displayName: { $regex: search, $options: 'i' } }
-        ];
-      }
-      if (fileType) {
-        query.fileType = fileType;
-      }
-      if (isPublic !== undefined) {
-        query.isPublic = isPublic === 'true';
-      }
-
-      const skip = (page - 1) * limit;
-      
-      const files = await File.find(query)
-        .populate('uploaderId', 'username email')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-      const total = await File.countDocuments(query);
+      const result = await AdminService.getFiles(options);
 
       res.json({
         success: true,
-        data: {
-          files,
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            pages: Math.ceil(total / limit)
-          }
-        }
+        data: result
       });
     } catch (error) {
       res.status(500).json({
@@ -339,6 +293,76 @@ class AdminController {
       });
     } catch (error) {
       const statusCode = error.message.includes('无权删除') ? 403 : 404;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 批量删除文件
+  async batchDeleteFiles(req, res) {
+    try {
+      const { fileIds } = req.body;
+      const adminId = req.user.userId; // 管理员ID
+
+      // 验证文件ID列表
+      if (!Array.isArray(fileIds) || fileIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供要删除的文件ID列表'
+        });
+      }
+
+      // 验证每个文件ID
+      for (const fileId of fileIds) {
+        if (!mongoose.isValidObjectId(fileId)) {
+          return res.status(400).json({
+            success: false,
+            message: `无效的文件ID: ${fileId}`
+          });
+        }
+      }
+
+      // 批量软删除文件
+      const results = await AdminService.batchDeleteFiles(fileIds, adminId);
+
+      res.json({
+        success: true,
+        message: '批量删除操作完成',
+        data: { results }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 恢复已删除文件
+  async restoreFile(req, res) {
+    try {
+      const { fileId } = req.params;
+
+      // 验证文件ID
+      if (!mongoose.isValidObjectId(fileId)) {
+        return res.status(400).json({
+          success: false,
+          message: '无效的文件ID'
+        });
+      }
+
+      const result = await AdminService.restoreFile(fileId);
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      const statusCode = error.message === '文件不存在' ? 404 : 
+                        error.message === '文件未被删除' ? 400 : 
+                        error.message === '文件已超过12小时恢复期限，无法恢复' ? 400 : 500;
       res.status(statusCode).json({
         success: false,
         message: error.message
@@ -374,6 +398,60 @@ class AdminController {
             pages: 1
           }
         }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // 获取系统状态
+  async getSystemStatus(req, res) {
+    try {
+      const stats = await AdminService.getSystemStatus();
+      
+      // 检查数据库连接状态
+      let databaseStatus = 'unknown';
+      let databaseConnections = 0;
+      
+      try {
+        // 检查Mongoose连接状态
+        const mongooseState = mongoose.connection.readyState;
+        if (mongooseState === 1) {
+          databaseStatus = 'connected';
+          // 获取活跃连接数
+          databaseConnections = mongoose.connection.connections ? mongoose.connection.connections.length : 1;
+        } else if (mongooseState === 0) {
+          databaseStatus = 'disconnected';
+        } else if (mongooseState === 2) {
+          databaseStatus = 'connecting';
+        } else if (mongooseState === 3) {
+          databaseStatus = 'disconnecting';
+        }
+      } catch (dbError) {
+        databaseStatus = 'error';
+        console.error('数据库连接检查错误:', dbError);
+      }
+
+      const systemStatus = {
+        ...stats,
+        server: {
+          status: 'online',
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          cpu: process.cpuUsage()
+        },
+        database: {
+          status: databaseStatus,
+          connections: databaseConnections
+        }
+      };
+
+      res.json({
+        success: true,
+        data: systemStatus
       });
     } catch (error) {
       res.status(500).json({

@@ -73,12 +73,13 @@ export const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-// 超级管理员权限验证
-export const requireSuperAdmin = (req, res, next) => {
-  if (req.admin?.role !== 'admin') {
+// 统一管理员权限（不区分等级）
+export const requireAdmin = (req, res, next) => {
+  // 所有管理员（包括版主）都拥有相同权限
+  if (!req.admin || !['admin', 'moderator'].includes(req.admin.role)) {
     return res.status(403).json({
       success: false,
-      message: '访问被拒绝：需要超级管理员权限'
+      message: '访问被拒绝：需要管理员权限'
     });
   }
   next();
@@ -94,6 +95,7 @@ export const logAdminAction = (action) => {
       const logData = {
         adminId: req.admin?.userId,
         adminUsername: req.admin?.username,
+        adminRole: req.admin?.role,
         action,
         method: req.method,
         path: req.path,
