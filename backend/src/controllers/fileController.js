@@ -118,26 +118,61 @@ class FileController {
   async downloadFile(req, res) {
     try {
       const { fileId } = req.params;
-      const { file, filePath, filename } = await FileService.downloadFile(
+      const { file, fileData, filename } = await FileService.downloadFile(
         fileId, 
         req.user?.userId
       );
 
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error('文件下载错误:', err);
-          res.status(500).json({
-            success: false,
-            message: '文件下载失败'
-          });
-        }
-      });
+      // 设置响应头
+      res.set('Content-Type', file.mimeType);
+      res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+      res.set('Content-Length', fileData.length);
+
+      // 发送文件数据
+      res.send(fileData);
     } catch (error) {
       const statusCode = error.message.includes('无权访问') ? 403 : 404;
       res.status(statusCode).json({
         success: false,
         message: error.message
       });
+    }
+  }
+
+  // 获取缩略图
+  async getThumbnail(req, res) {
+    try {
+      const { fileId } = req.params;
+      const { data, mimeType } = await FileService.getThumbnail(fileId);
+
+      // 设置响应头
+      res.set('Content-Type', mimeType);
+      res.set('Content-Length', data.length);
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+
+      // 发送缩略图数据
+      res.send(data);
+    } catch (error) {
+      // 对于404错误，返回一个默认的占位符图片而不是错误响应
+      if (error.message.includes('文件不存在') || error.message.includes('缩略图不存在')) {
+        // 返回一个透明的1x1像素PNG图片作为占位符
+        const placeholder = Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          'base64'
+        );
+      
+        res.set('Content-Type', 'image/png');
+        res.set('Content-Length', placeholder.length);
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.status(200).send(placeholder);
+      } else {
+        // 其他错误返回错误响应
+        const statusCode = error.message.includes('无权访问') ? 403 : 404;
+        res.status(statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
     }
   }
 

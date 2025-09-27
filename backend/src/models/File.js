@@ -38,6 +38,17 @@ const fileSchema = new Schema({
     required: [true, '文件大小是必填项'],
     min: [0, '文件大小不能为负数']
   },
+  // 新增：存储文件数据的Buffer字段
+  data: {
+    type: Buffer,
+    required: true
+  },
+  // 新增：存储缩略图数据的Buffer字段
+  thumbnailData: {
+    type: Buffer,
+    required: false
+  },
+  // 修改：文件URL现在指向API端点而不是文件系统路径
   fileUrl: {
     type: String,
     required: [true, '文件URL是必填项']
@@ -93,6 +104,11 @@ const fileSchema = new Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // 软删除时间戳
+  deletedAt: {
+    type: Date,
+    default: null
   },
   accessLevel: {
     type: String,

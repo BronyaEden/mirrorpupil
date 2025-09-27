@@ -29,18 +29,20 @@ class FileService {
     // 确定文件类型
     const fileType = this.determineFileType(mimetype);
     
-    // 生成文件URL
-    const fileUrl = `/uploads/${filename}`;
+    // 生成文件URL - 现在指向API端点而不是文件系统路径
+    const fileUrl = `/api/files/${uuidv4()}/download`;
     
-    // 创建文件记录
+    // 创建文件记录，包含文件数据
     const file = new File({
-      filename,
+      filename: `${uuidv4()}${path.extname(originalname)}`,
       originalName: originalname,
       displayName: displayName || originalname,
       description,
       fileType,
       mimeType: mimetype,
       fileSize: size,
+      // 将文件数据存储在数据库中
+      data: buffer,
       fileUrl,
       uploaderId: userId,
       tags: Array.isArray(tags) ? tags : [tags].filter(Boolean),
@@ -53,17 +55,16 @@ class FileService {
     if (fileType === 'image' && buffer && buffer.length > 0) {
       try {
         console.log('开始生成缩略图:', filename);
-        const thumbnailFilename = `thumb_${filename}`;
-        const thumbnailPath = path.join(process.cwd(), 'uploads', thumbnailFilename);
-        console.log('缩略图路径:', thumbnailPath);
         
-        await sharp(buffer)
+        // 生成缩略图数据并存储在数据库中，而不是文件系统
+        const thumbnailBuffer = await sharp(buffer)
           .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
           .jpeg({ quality: 80 })
-          .toFile(thumbnailPath);
+          .toBuffer();
           
-        file.thumbnailUrl = `/uploads/${thumbnailFilename}`;
-        console.log('缩略图生成成功:', file.thumbnailUrl);
+        // 将缩略图数据存储在文件记录中
+        file.thumbnailData = thumbnailBuffer;
+        console.log('缩略图生成成功');
         
         // 获取图片元数据
         const metadata = await sharp(buffer).metadata();
@@ -84,6 +85,12 @@ class FileService {
     }
 
     await file.save();
+    
+    // 现在文件已保存，可以设置缩略图URL了
+    if (file.thumbnailData) {
+      file.thumbnailUrl = `/api/files/${file._id}/thumbnail`;
+      await file.save(); // 保存更新后的缩略图URL
+    }
     
     // 填充上传者信息
     await file.populate('uploaderId', 'username avatar');
@@ -219,25 +226,56 @@ class FileService {
   async downloadFile(fileId, userId = null) {
     const file = await this.getFileById(fileId, userId);
     
-    // 检查文件是否存在
-    const filePath = path.join(process.cwd(), 'uploads', file.filename);
-    
-    try {
-      await fs.access(filePath);
-    } catch (error) {
-      throw new Error('文件不存在或已被删除');
-    }
-    
     // 增加下载次数
     await file.incrementDownload();
     
     // 更新用户文件统计
     await this.updateUserFileStats(file.uploaderId);
     
+    // 返回文件数据而不是文件路径
     return {
       file,
-      filePath,
+      fileData: file.data, // 文件数据来自数据库
       filename: file.originalName
+    };
+  }
+
+  // 获取缩略图
+  async getThumbnail(fileId) {
+    const file = await File.findById(fileId);
+    
+    if (!file || !file.isActive) {
+      throw new Error('文件不存在');
+    }
+    
+    // 如果是图片文件但没有缩略图数据，返回一个默认的占位符图片
+    if (file.fileType === 'image' && !file.thumbnailData) {
+      // 生成一个简单的占位符图片
+      const placeholder = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      return {
+        data: placeholder,
+        mimeType: 'image/png'
+      };
+    }
+    
+    // 如果不是图片文件，也返回占位符
+    if (file.fileType !== 'image') {
+      const placeholder = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      return {
+        data: placeholder,
+        mimeType: 'image/png'
+      };
+    }
+    
+    return {
+      data: file.thumbnailData,
+      mimeType: file.mimeType
     };
   }
 
@@ -257,12 +295,10 @@ class FileService {
     // 保存上传者ID用于后续更新统计
     const uploaderId = file.uploaderId;
     
-    // 软删除
+    // 软删除 - 设置deletedAt时间
     file.isActive = false;
+    file.deletedAt = new Date();
     await file.save();
-    
-    // 删除物理文件（异步进行，不影响响应）
-    this.deletePhysicalFile(file.filename, file.thumbnailUrl);
     
     // 更新用户文件统计
     await this.updateUserFileStats(uploaderId);
@@ -434,22 +470,6 @@ class FileService {
         return false; // 需要通过分享链接访问
       default:
         return file.isPublic;
-    }
-  }
-
-  // 辅助方法：删除物理文件
-  async deletePhysicalFile(filename, thumbnailUrl) {
-    try {
-      const filePath = path.join(process.cwd(), 'uploads', filename);
-      await fs.unlink(filePath);
-      
-      if (thumbnailUrl) {
-        const thumbnailPath = path.join(process.cwd(), 'uploads', 
-          path.basename(thumbnailUrl));
-        await fs.unlink(thumbnailPath);
-      }
-    } catch (error) {
-      console.error('删除物理文件失败:', error);
     }
   }
   

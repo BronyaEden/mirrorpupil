@@ -15,6 +15,9 @@ import chatRoutes from './routes/chat.js';
 import adminRoutes from './routes/admin.js';
 import imageRoutes from './routes/images.js';
 
+// 定时任务
+import cleanupDeletedFiles from './scripts/cleanupDeletedFiles.js';
+
 // 加载环境变量
 dotenv.config();
 
@@ -164,6 +167,17 @@ const startServer = async () => {
     console.log(`API文档: http://localhost:${PORT}/api`);
     console.log(`健康检查: http://localhost:${PORT}/api/health`);
   });
+  
+  // 启动定时任务，每小时清理一次软删除的文件
+  setInterval(async () => {
+    try {
+      console.log('开始执行文件清理任务...');
+      await cleanupDeletedFiles();
+      console.log('文件清理任务执行完成');
+    } catch (error) {
+      console.error('文件清理任务执行失败:', error);
+    }
+  }, 60 * 60 * 1000); // 每小时执行一次
 };
 
 // 优雅关闭

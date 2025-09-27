@@ -3,6 +3,14 @@ import { body, param, query } from 'express-validator';
 import FileController from '../controllers/fileController.js';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { uploadFile, handleUploadError } from '../middleware/upload.js';
+import cors from 'cors';
+
+// CORS配置
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
 const router = express.Router();
 
@@ -135,6 +143,14 @@ router.get('/:fileId/download',
   optionalAuth,
   fileIdValidation,
   FileController.downloadFile
+);
+
+// 获取缩略图 - 添加CORS支持
+router.get('/:fileId/thumbnail',
+  cors(corsOptions),
+  optionalAuth,
+  fileIdValidation,
+  FileController.getThumbnail
 );
 
 // 更新文件信息

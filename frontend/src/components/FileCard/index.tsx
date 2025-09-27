@@ -229,25 +229,14 @@ const FileCard: React.FC<FileCardProps> = ({
     >
       <FilePreview fileType={file.fileType}>
         {file.fileType === 'image' ? (
-          file.thumbnailUrl ? (
-            <Image
-              src={getFullImageUrl(file.thumbnailUrl)}
-              alt={file.displayName}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              preview={false}
-            />
-          ) : file.fileUrl ? (
-            <Image
-              src={getFullImageUrl(file.fileUrl)}
-              alt={file.displayName}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              preview={false}
-            />
-          ) : (
-            <FileTypeIcon fileType={file.fileType}>
-              {getFileTypeIcon(file.fileType)}
-            </FileTypeIcon>
-          )
+          // 使用API获取缩略图
+          <Image
+            src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/${file._id}/thumbnail`}
+            alt={file.displayName}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            preview={false}
+            fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+SW1hZ2U8L3RleHQ+PC9zdmc+"
+          />
         ) : (
           <FileTypeIcon fileType={file.fileType}>
             {getFileTypeIcon(file.fileType)}

@@ -1,12 +1,19 @@
 import axios from 'axios';
 
-// 创建axios实例
+// 创建标准API axios实例
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// 创建用于文件下载的axios实例
+const fileApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  timeout: 30000,
+  responseType: 'blob', // 重要：设置响应类型为blob以处理二进制数据
 });
 
 // 请求拦截器
@@ -18,6 +25,20 @@ api.interceptors.request.use(
       console.log('API Request - Adding Authorization header:', config.url, token.substring(0, 20) + '...');
     } else {
       console.log('API Request - No token found for:', config.url);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 文件API请求拦截器
+fileApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -76,4 +97,16 @@ api.interceptors.response.use(
   }
 );
 
+// 文件API响应拦截器
+fileApi.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('File API Response Error:', error.response?.status, error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
+export { fileApi };
 export default api;

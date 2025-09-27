@@ -1,4 +1,5 @@
 import { User, File, Message, Conversation } from '../models/index.js';
+import FileService from '../services/fileService.js';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -327,24 +328,18 @@ class AdminController {
   async deleteFile(req, res) {
     try {
       const { fileId } = req.params;
+      const userId = req.user.userId; // 管理员ID
 
-      const file = await File.findByIdAndDelete(fileId);
-      if (!file) {
-        return res.status(404).json({
-          success: false,
-          message: '文件不存在'
-        });
-      }
-
-      // TODO: 删除实际文件
-      // 这里可以添加删除物理文件的逻辑
+      // 使用文件服务删除文件（软删除）
+      const result = await FileService.deleteFile(fileId, userId);
 
       res.json({
         success: true,
-        message: '文件删除成功'
+        message: result.message
       });
     } catch (error) {
-      res.status(500).json({
+      const statusCode = error.message.includes('无权删除') ? 403 : 404;
+      res.status(statusCode).json({
         success: false,
         message: error.message
       });

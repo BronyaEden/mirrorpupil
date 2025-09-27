@@ -3,25 +3,8 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-// 确保上传目录存在
-const uploadDir = 'uploads';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// 配置存储
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // 生成唯一文件名
-    const uniqueSuffix = uuidv4();
-    const ext = path.extname(file.originalname);
-    const filename = `${uniqueSuffix}${ext}`;
-    cb(null, filename);
-  }
-});
+// 配置存储 - 使用内存存储
+const storage = multer.memoryStorage();
 
 // 文件过滤器
 const fileFilter = (req, file, cb) => {

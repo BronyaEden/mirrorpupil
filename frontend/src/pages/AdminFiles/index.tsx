@@ -207,6 +207,36 @@ const AdminFiles: React.FC = () => {
   // 文件表格列定义
   const fileColumns = [
     {
+      title: '预览',
+      key: 'thumbnail',
+      render: (record: FileData) => (
+        record.fileType === 'image' ? (
+          <img
+            src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/${record._id}/thumbnail`}
+            alt={record.displayName}
+            style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZpbGw9IiM5OTkiPjx0c3Bhbj5JbWFnZTwvdHNwYW4+PC90ZXh0Pjwvc3ZnPg==';
+            }}
+          />
+        ) : (
+          <div style={{ 
+            width: 50, 
+            height: 50, 
+            background: '#f0f0f0',
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 20
+          }}>
+            📄
+          </div>
+        )
+      )
+    },
+    {
       title: '文件名',
       key: 'filename',
       render: (record: FileData) => (

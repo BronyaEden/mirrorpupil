@@ -26,7 +26,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { FileItem } from '../../types';
 import { getFullImageUrl } from '../../utils/imageUtils';
-import api from '../../utils/api';
+import api, { fileApi } from '../../utils/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -130,9 +130,7 @@ const FileDetailPage: React.FC = () => {
     if (!file) return;
     
     try {
-      const response = await api.get(`/files/${file._id}/download`, {
-        responseType: 'blob'
-      });
+      const response = await fileApi.get(`/files/${file._id}/download`);
       
       // 创建下载链接
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -153,12 +151,23 @@ const FileDetailPage: React.FC = () => {
     }
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!file) return;
     
-    // 如果是图片文件，直接在新窗口打开图片
-    if (file.fileType === 'image' && file.fileUrl) {
-      window.open(getFullImageUrl(file.fileUrl), '_blank');
+    // 如果是图片文件，通过API获取文件数据并在新窗口显示
+    if (file.fileType === 'image') {
+      try {
+        const response = await fileApi.get(`/files/${file._id}/download`);
+        
+        // 创建对象URL并在新窗口打开
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: file.mimeType }));
+        window.open(url, '_blank');
+        
+        // 注意：在生产环境中，可能需要在适当时候调用 URL.revokeObjectURL(url)
+      } catch (error) {
+        console.error('预览文件失败:', error);
+        message.error('预览文件失败');
+      }
     } else {
       message.info('预览功能待实现');
     }
@@ -228,17 +237,17 @@ const FileDetailPage: React.FC = () => {
         
         <FileHeader>
           <FilePreview>
-            {file.fileType === 'image' && file.fileUrl ? (
+            {/* 使用API获取缩略图 */}
+            {file.fileType === 'image' ? (
               <img 
-                src={getFullImageUrl(file.fileUrl)} 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/${file._id}/thumbnail`} 
                 alt={file.displayName}
                 style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }}
-              />
-            ) : file.thumbnailUrl ? (
-              <img 
-                src={getFullImageUrl(file.thumbnailUrl)} 
-                alt={file.displayName}
-                style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }}
+                onError={(e) => {
+                  // 如果缩略图获取失败，显示占位符
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+SW1hZ2U8L3RleHQ+PC9zdmc+';
+                }}
               />
             ) : (
               <div style={{ 
