@@ -30,6 +30,8 @@ import { RootState } from '../../store';
 import { fetchConversations, fetchMessages, sendMessage, setCurrentConversation, clearMessages } from '../../store/chatSlice';
 import { getFullImageUrl } from '../../utils/imageUtils';
 import ParticleBackground from '../../components/ParticleBackground';
+import { mediaQuery } from '../../styles/responsive';
+import { mobileStyles } from '../../styles/mobile';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -61,6 +63,13 @@ const ChatLayout = styled(Layout)`
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%); /* 调整主背景透明度 */
   background-clip: padding-box;
   position: relative;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    margin: 10px;
+    height: calc(100vh - 120px); /* 大幅提高整个聊天界面 */
+    border-radius: 14px;
+  `)}
   
   &::before {
     content: '';
@@ -99,6 +108,18 @@ const ChatLayout = styled(Layout)`
   }
 `;
 
+const ChatContentWithParticles = styled.div`
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  // 移动端优化样式 - 为固定输入框预留空间
+  ${mediaQuery.mobile(`
+    padding-bottom: 60px; /* 调整预留空间 */
+  `)}
+`;
+
 const ParticleBackgroundContainer = styled.div`
   position: absolute;
   top: 0;
@@ -106,13 +127,6 @@ const ParticleBackgroundContainer = styled.div`
   right: 0;
   bottom: 0;
   z-index: -2; /* 确保粒子背景在最底层 */
-`;
-
-const ChatContentWithParticles = styled.div`
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 `;
 
 const MessageBubble = styled.div<{ isOwn: boolean }>`
@@ -142,7 +156,15 @@ const MessageBubble = styled.div<{ isOwn: boolean }>`
   font-size: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   
-  /* 添加动态背景渐变动画 */
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    max-width: 75vw;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    border-radius: 16px;
+  `)}
+  
+  // 添加动态背景渐变动画
   background-size: 300% 300%;
   animation: ${props => props.isOwn 
     ? 'gradientShiftOwn 8s cubic-bezier(0.4, 0, 0.2, 1) infinite' 
@@ -252,6 +274,11 @@ const MessageBubbleWrapper = styled.div`
   width: auto;
   flex: 0 0 auto;
   
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    gap: 2px;
+  `)}
+  
   /* 添加进入动画效果 */
   animation: fadeInUp 0.3s ease-out;
   
@@ -294,6 +321,11 @@ const ConversationSider = styled(Sider)`
   backdrop-filter: blur(10px);
   border-radius: 14px 0 0 14px;
   width: 280px; /* 设置固定宽度为280px */
+  
+  // 在移动端隐藏侧边栏
+  ${mediaQuery.mobile(`
+    display: none;
+  `)}
 `;
 
 const ChatContent = styled(Content)`
@@ -302,6 +334,11 @@ const ChatContent = styled(Content)`
   flex-direction: column;
   backdrop-filter: blur(10px);
   border-radius: 0 14px 14px 0;
+  
+  // 在移动端调整样式
+  ${mediaQuery.mobile(`
+    border-radius: 14px;
+  `)}
 `;
 
 const MessageList = styled.div.attrs({
@@ -313,6 +350,16 @@ const MessageList = styled.div.attrs({
   display: flex;
   flex-direction: column;
   gap: 16px;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    padding: 15px;
+    gap: 12px;
+    padding-bottom: 60px; /* 调整预留空间 */
+  `)}
+  
+  // 添加移动端滚动优化
+  ${mobileStyles.scrollAreaOptimized}
 `;
 
 const MessageInput = styled.div`
@@ -322,6 +369,58 @@ const MessageInput = styled.div`
   gap: 12px;
   background: rgba(31, 41, 55, 0.7);
   border-radius: 0 0 14px 0;
+  align-items: flex-end; /* 底部对齐 */
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    padding: 12px; /* 减小内边距使布局更紧凑 */
+    gap: 8px;
+    border-radius: 14px;
+    position: fixed;
+    bottom: 0px;
+    left: 10px;
+    right: 10px;
+    z-index: 100;
+    margin: 0;
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    align-items: center; /* 在移动端居中对齐 */
+  `)}
+`;
+
+const SendButton = styled(Button)`
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  height: 40px;
+  
+  // 移动端优化样式
+  ${mobileStyles.buttonOptimized}
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  }
+  
+  &:disabled {
+    background: #4b5563;
+    box-shadow: none;
+    transform: none;
+  }
+  
+  // 移动端特别优化
+  ${mediaQuery.mobile(`
+    padding: 0 12px;
+    height: 36px; /* 与输入框统一高度 */
+    font-size: 14px;
+    border-radius: 10px;
+    flex-shrink: 0; /* 防止按钮被压缩 */
+  `)}
 `;
 
 const ChatHeader = styled.div`
@@ -335,6 +434,14 @@ const ChatHeader = styled.div`
   border-radius: 0 14px 0 0;
   position: relative;
   
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    padding: 15px;
+    gap: 12px;
+    border-radius: 14px 14px 0 0;
+    justify-content: center; /* 在移动端居中对齐 */
+  `)}
+  
   &::before {
     content: '';
     position: absolute;
@@ -345,6 +452,11 @@ const ChatHeader = styled.div`
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
     z-index: -1;
     border-radius: 0 14px 0 0;
+    
+    // 移动端优化样式
+    ${mediaQuery.mobile(`
+      border-radius: 14px 14px 0 0;
+    `)}
   }
 `;
 
@@ -354,16 +466,25 @@ const ControlsContainer = styled.div`
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  
+  // 在移动端隐藏粒子效果开关以节省空间
+  ${mediaQuery.mobile(`
+    display: none;
+  `)}
 `;
 
 const BackButton = styled(Button)`
   background: linear-gradient(135deg, #667eea, #764ba2);
   border: none;
   border-radius: 12px;
-  padding: 8px 16px;
+  padding: 6px 12px; /* 减小内边距使按钮更小 */
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  font-size: 14px; /* 减小字体大小 */
+  
+  // 移动端优化样式
+  ${mobileStyles.buttonOptimized}
   
   &:hover {
     transform: translateY(-2px);
@@ -381,6 +502,12 @@ const UserAvatar = styled(Avatar)`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    width: 40px;
+    height: 40px;
+  `)}
+  
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
@@ -389,6 +516,11 @@ const UserAvatar = styled(Avatar)`
 
 const UserInfo = styled.div`
   flex: 1;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    flex: none;
+  `)}
 `;
 
 const UserName = styled(Text)`
@@ -396,11 +528,21 @@ const UserName = styled(Text)`
   font-weight: 600;
   color: #fff;
   display: block;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    font-size: 1.1rem;
+  `)}
 `;
 
 const UserStatus = styled(Text)`
   font-size: 0.9rem;
   color: #9ca3af;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    font-size: 0.8rem;
+  `)}
 `;
 
 const ReplyContainer = styled.div`
@@ -422,27 +564,6 @@ const CancelButton = styled(Button)`
   color: #ff4d4f;
   &:hover {
     background: rgba(255, 77, 79, 0.1);
-  }
-`;
-
-const SendButton = styled(Button)`
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border: none;
-  border-radius: 12px;
-  padding: 0 24px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-  }
-  
-  &:disabled {
-    background: #4b5563;
-    box-shadow: none;
-    transform: none;
   }
 `;
 
@@ -529,6 +650,11 @@ const MessageContainer = styled.div<{ isOwn: boolean }>`
   align-items: flex-start;
   gap: 8px;
   width: 100%;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    gap: 6px;
+  `)}
 `;
 
 const MessageSenderInfo = styled.div<{ isOwn: boolean }>`
@@ -540,6 +666,12 @@ const MessageSenderInfo = styled.div<{ isOwn: boolean }>`
   width: auto;
   justify-content: flex-start;
   align-self: flex-start; /* 确保头像靠上对齐 */
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    gap: 2px;
+    margin-bottom: 2px;
+  `)}
 `;
 
 const SenderName = styled(Text)`
@@ -551,6 +683,12 @@ const SenderName = styled(Text)`
   max-width: 60px; /* 限制最大宽度 */
   overflow: hidden;
   text-overflow: ellipsis;
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    font-size: 0.6rem;
+    max-width: 50px;
+  `)}
 `;
 
 const SenderAvatar = styled(Avatar)`
@@ -560,6 +698,13 @@ const SenderAvatar = styled(Avatar)`
   border: 2px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  
+  // 移动端优化样式
+  ${mediaQuery.mobile(`
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  `)}
 `;
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
@@ -919,9 +1064,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     type="primary" 
                     onClick={() => navigate('/messages')}
                   >
-                    ← 返回消息
+                    ← 返回
                   </BackButton>
-                  <Space>
+                  <Space style={{ flex: 1, justifyContent: 'center' }}>
                     {(() => {
                       const otherParticipant = getOtherParticipant(currentConversation);
                       return (
@@ -1013,6 +1158,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                       background: 'rgba(31, 41, 55, 0.7)',
                       border: '1px solid rgba(75, 85, 99, 0.5)',
                       color: '#f3f4f6',
+                      minHeight: '36px', /* 与按钮统一高度 */
+                      maxHeight: '120px', /* 限制最大高度 */
                     }}
                   />
                   <SendButton
