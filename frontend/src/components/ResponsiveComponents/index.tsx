@@ -72,8 +72,8 @@ const GridContainer = styled.div<GridProps>`
     ${columns.xl && mediaQuery.minXl(`grid-template-columns: repeat(${columns.xl}, 1fr);`)}
   `}
   
-  ${({ gap = { xs: '16px', sm: '16px', md: '24px', lg: '24px', xl: '32px' } }) => `
-    gap: ${gap.xs || '16px'};
+  ${({ gap = { xs: '8px', sm: '8px', md: '12px', lg: '12px', xl: '16px' } }) => `
+    gap: ${gap.xs || '8px'};
     
     ${gap.sm && mediaQuery.minSm(`gap: ${gap.sm};`)}
     ${gap.md && mediaQuery.minMd(`gap: ${gap.md};`)}

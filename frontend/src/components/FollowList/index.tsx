@@ -24,11 +24,15 @@ interface FollowListState {
 const ListContainer = styled.div`
   background: ${props => props.theme.colors.background.secondary};
   border-radius: ${props => props.theme.borderRadius.lg};
-  padding: ${props => props.theme.spacing.md};
+  padding: ${props => props.theme.spacing.sm};
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.xs};
+  }
 `;
 
 const UserItem = styled(List.Item)`
-  padding: ${props => props.theme.spacing.md} 0;
+  padding: ${props => props.theme.spacing.sm} 0;
   border-bottom: 1px solid ${props => props.theme.colors.neutral.gray400};
   cursor: pointer;
   
@@ -39,10 +43,21 @@ const UserItem = styled(List.Item)`
   &:last-child {
     border-bottom: none;
   }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.xs} 0;
+  }
 `;
 
 const UserAvatar = styled(Avatar)`
-  margin-right: ${props => props.theme.spacing.md};
+  margin-right: ${props => props.theme.spacing.sm};
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    margin-right: ${props => props.theme.spacing.xs};
+  }
 `;
 
 const UserInfo = styled.div`
@@ -52,22 +67,41 @@ const UserInfo = styled.div`
 const Username = styled.div`
   font-weight: 600;
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 14px;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 12px;
+    margin-bottom: 1px;
+  }
 `;
 
 const UserBio = styled.div`
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 14px;
-  margin-bottom: 8px;
+  font-size: 12px;
+  margin-bottom: 4px;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
 `;
 
 const UserStats = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.md};
+  gap: ${props => props.theme.spacing.sm};
   
   span {
     color: ${props => props.theme.colors.text.secondary};
-    font-size: 14px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    gap: ${props => props.theme.spacing.xs};
+    
+    span {
+      font-size: 11px;
+    }
   }
 `;
 
@@ -140,7 +174,7 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
   if (state.loading && state.users.length === 0) {
     return (
       <ListContainer>
-        <Skeleton active paragraph={{ rows: 5 }} />
+        <Skeleton active paragraph={{ rows: 3 }} />
       </ListContainer>
     );
   }
@@ -150,7 +184,7 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
       <ListContainer>
         <Empty 
           description={`暂无${type === 'followers' ? '关注者' : '关注中'}用户`} 
-          style={{ padding: '40px 0' }} 
+          style={{ padding: '20px 0' }} 
         />
       </ListContainer>
     );
@@ -163,7 +197,7 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
         renderItem={(user: User) => (
           <UserItem onClick={() => handleUserClick(user._id)}>
             <UserAvatar
-              size={48}
+              size={32}
               src={getFullImageUrl(user.avatar) || undefined}
               icon={<UserOutlined />}
             />
@@ -179,8 +213,8 @@ const FollowList: React.FC<FollowListProps> = ({ userId, type }) => {
         )}
         loading={state.loading && state.users.length > 0}
         loadMore={state.hasMore ? (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <Button onClick={handleLoadMore}>加载更多</Button>
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <Button size="small" onClick={handleLoadMore}>加载更多</Button>
           </div>
         ) : null}
       />

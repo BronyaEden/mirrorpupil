@@ -21,16 +21,16 @@ const StyledLayout = styled(AntLayout)`
 const StyledContent = styled(Content)`
   background: transparent;
   /* 为全局固定Header预留空间 */
-  padding: 88px 24px 24px 24px; /* 64px(GlobalHeader高度) + 24px(间距) */
+  padding: 88px clamp(8px, 1vw, 16px) 24px clamp(8px, 1vw, 16px);
   flex: 1;
   min-height: 100vh;
   
   ${mediaQuery.mobile(`
-    padding: 72px 16px 16px 16px; /* 56px(GlobalHeader高度) + 16px(间距) */
+    padding: 56px clamp(2px, 1vw, 6px) 56px clamp(2px, 1vw, 6px); /* 为顶部和底部导航栏预留空间 */
   `)}
   
   ${mediaQuery.lg(`
-    padding: 96px 32px 32px 32px; /* 大屏幕更大的间距 */
+    padding: 96px clamp(12px, 1vw, 20px) 32px clamp(12px, 1vw, 20px); /* 大屏幕更大的间距 */
   `)}
 `;
 

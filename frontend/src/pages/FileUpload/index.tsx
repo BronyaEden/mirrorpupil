@@ -39,6 +39,37 @@ const UploadContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: ${props => props.theme.spacing.lg};
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.md};
+    
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+    
+    .ant-typography {
+      font-size: 16px;
+    }
+    
+    .ant-form-item-label {
+      padding-bottom: 4px;
+    }
+    
+    .access-control-item .ant-space {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    
+    .access-control-item .ant-typography {
+      font-size: 12px;
+    }
+    
+    .ant-typography-title {
+      font-size: 20px !important;
+      margin-bottom: 24px !important;
+    }
+  }
 `;
 
 const StyledCard = styled(Card)`
@@ -48,6 +79,12 @@ const StyledCard = styled(Card)`
   
   .ant-card-body {
     padding: ${props => props.theme.spacing.xl};
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    .ant-card-body {
+      padding: ${props => props.theme.spacing.md};
+    }
   }
 `;
 
@@ -66,14 +103,28 @@ const StyledDragger = styled(Dragger)`
   }
   
   .ant-upload-text {
-    color: #00D9FF !important; /* 蓝绿色 */
-    font-size: 20px !important; /* 调大字号 */
+    color: #00D9FF !important;
+    font-size: 20px !important;
     font-weight: 500 !important;
   }
   
   .ant-upload-hint {
-    color: #00D9FF !important; /* 蓝绿色 */
-    font-size: 16px !important; /* 调大字号 */
+    color: #00D9FF !important;
+    font-size: 16px !important;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    .ant-upload-text {
+      font-size: 16px !important;
+    }
+    
+    .ant-upload-hint {
+      font-size: 14px !important;
+    }
+    
+    .ant-upload-drag-icon .anticon {
+      font-size: 32px !important;
+    }
   }
 `;
 
@@ -94,6 +145,11 @@ const TagInput = styled.div`
     border-color: ${props => props.theme.colors.primary.main};
     color: white;
   }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.xs};
+    min-height: 32px;
+  }
 `;
 
 const TagInputField = styled(Input)`
@@ -105,32 +161,65 @@ const TagInputField = styled(Input)`
   &:focus {
     box-shadow: none;
   }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    min-width: 80px;
+    font-size: 14px;
+  }
 `;
 
 const StyledFormItemLabel = styled.span`
-  color: #00D9FF !important; /* 蓝绿色 */
-  font-size: 18px !important; /* 调大字号 */
+  color: #00D9FF !important;
+  font-size: 18px !important;
   font-weight: 500 !important;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 14px !important;
+  }
 `;
 
 const StyledInput = styled(Input)`
   &::placeholder {
-    color: #00D9FF !important; /* 蓝绿色 */
-    font-size: 16px !important; /* 调大字号 */
+    color: #00D9FF !important;
+    font-size: 16px !important;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    &::placeholder {
+      font-size: 14px !important;
+    }
+    
+    font-size: 14px;
   }
 `;
 
 const StyledTextArea = styled(TextArea)`
   &::placeholder {
-    color: #00D9FF !important; /* 蓝绿色 */
-    font-size: 16px !important; /* 调大字号 */
+    color: #00D9FF !important;
+    font-size: 16px !important;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    &::placeholder {
+      font-size: 14px !important;
+    }
+    
+    font-size: 14px;
   }
 `;
 
 const StyledSelect = styled(Select)`
   .ant-select-selection-placeholder {
-    color: #888888 !important; /* 灰色 */
-    font-size: 16px !important; /* 调大字号 */
+    color: #888888 !important;
+    font-size: 16px !important;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    .ant-select-selection-placeholder {
+      font-size: 14px !important;
+    }
+    
+    font-size: 14px;
   }
 `;
 
@@ -143,6 +232,11 @@ const StyledButton = styled(Button)`
   &:hover, &:focus {
     background: linear-gradient(45deg, #00A3FF, #0066FF, #0033CC) !important;
     border: none !important;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    height: 40px !important;
+    font-size: 1rem !important;
   }
 `;
 
@@ -250,7 +344,15 @@ const FileUpload: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography.Title level={2} style={{ color: '#fff', textAlign: 'center', marginBottom: 32 }}>
+        <Typography.Title 
+          level={2} 
+          style={{ 
+            color: '#fff', 
+            textAlign: 'center', 
+            marginBottom: 32,
+            fontSize: '24px'
+          }}
+        >
           文件上传
         </Typography.Title>
         
@@ -283,9 +385,23 @@ const FileUpload: React.FC = () => {
               </StyledDragger>
               
               {uploadFile && (
-                <div style={{ marginTop: 16, padding: 16, background: 'rgba(0, 217, 255, 0.1)', borderRadius: 8 }}>
-                  <Typography.Text strong style={{ color: '#00D9FF' }}>已选择文件：</Typography.Text>
-                  <Typography.Text style={{ color: '#fff', marginLeft: 8 }}>
+                <div style={{ 
+                  marginTop: 16, 
+                  padding: 16, 
+                  background: 'rgba(0, 217, 255, 0.1)', 
+                  borderRadius: 8 
+                }}>
+                  <Typography.Text strong style={{ 
+                    color: '#00D9FF',
+                    display: 'block',
+                    marginBottom: 8
+                  }}>
+                    已选择文件：
+                  </Typography.Text>
+                  <Typography.Text style={{ 
+                    color: '#fff',
+                    wordBreak: 'break-all'
+                  }}>
                     {uploadFile.name} ({(uploadFile.size / 1024 / 1024).toFixed(2)} MB)
                   </Typography.Text>
                 </div>
@@ -303,6 +419,14 @@ const FileUpload: React.FC = () => {
                     '100%': '#FFD700',
                   }}
                 />
+                <div style={{ 
+                  textAlign: 'center', 
+                  marginTop: 8,
+                  fontSize: '14px',
+                  color: '#00D9FF'
+                }}>
+                  上传进度: {uploadProgress}%
+                </div>
               </Form.Item>
             )}
 
@@ -372,6 +496,7 @@ const FileUpload: React.FC = () => {
             <Form.Item
               name="isPublic"
               valuePropName="checked"
+              className="access-control-item"
             >
               <Space>
                 <Switch />
@@ -381,7 +506,7 @@ const FileUpload: React.FC = () => {
                 </Typography.Text>
               </Space>
             </Form.Item>
-
+            
             <Form.Item
               name="accessLevel"
               label={<StyledFormItemLabel>访问权限</StyledFormItemLabel>}

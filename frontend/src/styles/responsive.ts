@@ -137,29 +137,29 @@ export const containerSizes = {
 // 间距系统（响应式）
 export const spacing = {
   xs: {
+    padding: '4px',
+    margin: '4px',
+    gap: '4px',
+  },
+  sm: {
+    padding: '6px',
+    margin: '6px',
+    gap: '6px',
+  },
+  md: {
     padding: '8px',
     margin: '8px',
     gap: '8px',
   },
-  sm: {
+  lg: {
     padding: '12px',
     margin: '12px',
     gap: '12px',
   },
-  md: {
+  xl: {
     padding: '16px',
     margin: '16px',
     gap: '16px',
-  },
-  lg: {
-    padding: '24px',
-    margin: '24px',
-    gap: '24px',
-  },
-  xl: {
-    padding: '32px',
-    margin: '32px',
-    gap: '32px',
   },
 };
 
@@ -218,11 +218,11 @@ export const typography = {
 export const grid = {
   columns: 12,
   gutter: {
-    xs: '16px',
-    sm: '16px',
-    md: '24px',
-    lg: '24px',
-    xl: '32px',
+    xs: '8px',
+    sm: '8px',
+    md: '12px',
+    lg: '12px',
+    xl: '16px',
   },
 };
 
@@ -252,10 +252,10 @@ export const responsiveStyles = {
     width: 100%;
     max-width: ${containerSizes.xl};
     margin: 0 auto;
-    padding: 0 16px;
+    padding: 0 clamp(6px, 1vw, 16px);
     
-    ${mediaQuery.sm(`padding: 0 24px;`)}
-    ${mediaQuery.lg(`padding: 0 32px;`)}
+    ${mediaQuery.sm(`padding: 0 clamp(4px, 1.5vw, 12px);`)}
+    ${mediaQuery.lg(`padding: 0 clamp(8px, 1vw, 20px);`)}
   `,
   
   // 弹性布局

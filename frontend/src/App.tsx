@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { ConfigProvider, App as AntdApp } from 'antd';
@@ -31,10 +31,16 @@ import GlobalHeader from './components/GlobalHeader';
 import GlobalMouseEffects from './components/GlobalMouseEffects';
 import AnimatedBackground from './components/AnimatedBackground';
 import PageTransition from './components/PageTransition';
+import MobileNavbar from './components/MobileNavbar'; // 移动端底部导航栏导入
+import MobileTopNavbar from './components/MobileTopNavbar'; // 新增移动端顶部导航栏导入
 import { GlobalStyles } from './styles/GlobalStyles';
 import { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import FileDetailPage from './pages/FileDetailPage';  // 添加文件详情页面导入
+import ReactDOM from 'react-dom';
+
+// 添加调试信息
+console.log('App component loaded');
 
 // 路由守卫组件
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -76,7 +82,108 @@ const UserStateRecovery: React.FC = () => {
   return null;
 };
 
+// 应用主组件
+const AppContent: React.FC = () => {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  
+  // 添加调试信息
+  useEffect(() => {
+    console.log('AppContent mounted');
+  }, []);
+  
+  const toggleMobileSidebar = () => {
+    console.log('toggleMobileSidebar called');
+    setMobileSidebarOpen(!mobileSidebarOpen);
+  };
+  
+  const closeMobileSidebar = () => {
+    setMobileSidebarOpen(false);
+  };
+
+  return (
+    <>
+      {/* 全局固定Header - 直接渲染到body */}
+      <GlobalHeader />
+      
+      {/* 全局鼠标特效 - 直接渲染到body */}
+      <GlobalMouseEffects />
+      
+      {/* 添加调试信息 */}
+      {console.log('Rendering MobileTopNavbar')}
+      {/* 使用Portal将移动端顶部导航栏渲染到body */}
+      {ReactDOM.createPortal(
+        <MobileTopNavbar onMenuClick={toggleMobileSidebar} />,
+        document.body
+      )}
+      
+      {/* 添加调试信息 */}
+      {console.log('Rendering MobileNavbar')}
+      {/* 使用Portal将移动端底部导航栏渲染到body */}
+      {ReactDOM.createPortal(
+        <MobileNavbar />,
+        document.body
+      )}
+      
+      <PageTransition>
+        <Routes>
+          {/* 公开路由 */}
+          <Route path="/auth" element={<AuthPage />} />
+          
+          {/* 应用主体 - 不再包含Header */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="files" element={<FileExplorer />} />
+            <Route path="profile" element={<UserProfile />} />
+            <Route path="profile/:userId" element={<UserProfile />} />
+            <Route path="profile/:userId/files" element={<UserProfile />} />
+            <Route path="files/:fileId" element={<FileDetailPage />} />
+            
+            {/* 需要认证的路由 */}
+            <Route path="upload" element={
+              <ProtectedRoute>
+                <FileUpload />
+              </ProtectedRoute>
+            } />
+            <Route path="chat" element={
+              <ProtectedRoute>
+                <ChatInterface />
+              </ProtectedRoute>
+            } />
+            <Route path="chat/:conversationId" element={
+              <ProtectedRoute>
+                <ChatInterface />
+              </ProtectedRoute>
+            } />
+            {/* 消息路由 */}
+            <Route path="messages" element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="ai-chat" element={
+              <ProtectedRoute>
+                <AIChatPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="search" element={
+              <ProtectedRoute>
+                <UserSearch />
+              </ProtectedRoute>
+            } />
+            
+          </Route>
+          
+          {/* 404重定向 */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </PageTransition>
+    </>
+  );
+};
+
 const App: React.FC = () => {
+  console.log('App rendering');
   return (
     <Provider store={store}>
       <ConfigProvider locale={zhCN}>
@@ -86,98 +193,7 @@ const App: React.FC = () => {
             <AnimatedBackground />
             <UserStateRecovery />
             <Router>
-              <Routes>
-                {/* 管理后台路由 */}
-                <Route path="/admin/login" element={
-                  <>
-                    {/* 管理后台登录页面不使用全局鼠标特效 */}
-                    <AdminLogin />
-                  </>
-                } />
-                <Route path="/admin" element={
-                  <>
-                    {/* 全局鼠标特效 - 应用于管理后台 */}
-                    <GlobalMouseEffects />
-                    <AdminLayout />
-                  </>
-                }>
-                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="files" element={<AdminFiles />} />
-                  <Route path="system" element={<AdminSystem />} />
-                  <Route path="analytics" element={<AdminAnalytics />} />
-                  <Route path="messages" element={<AdminMessages />} />
-                  <Route path="security" element={<AdminSecurity />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                </Route>
-                
-                {/* 普通用户路由 */}
-                <Route path="/*" element={
-                  <>
-                    {/* 全局固定Header - 直接渲染到body */}
-                    <GlobalHeader />
-                    
-                    {/* 全局鼠标特效 - 直接渲染到body */}
-                    <GlobalMouseEffects />
-                    
-                    <PageTransition>
-                      <Routes>
-                        {/* 公开路由 */}
-                        <Route path="/auth" element={<AuthPage />} />
-                        
-                        {/* 应用主体 - 不再包含Header */}
-                        <Route path="/" element={<Layout />}>
-                          <Route index element={<HomePage />} />
-                          <Route path="files" element={<FileExplorer />} />
-                          <Route path="profile" element={<UserProfile />} />
-                          <Route path="profile/:userId" element={<UserProfile />} />
-                          <Route path="profile/:userId/files" element={<UserProfile />} />
-                          <Route path="files/:fileId" element={<FileDetailPage />} />
-                          
-                          {/* 需要认证的路由 */}
-                          <Route path="upload" element={
-                            <ProtectedRoute>
-                              <FileUpload />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="chat" element={
-                            <ProtectedRoute>
-                              <ChatInterface />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="chat/:conversationId" element={
-                            <ProtectedRoute>
-                              <ChatInterface />
-                            </ProtectedRoute>
-                          } />
-                          {/* 消息路由 */}
-                          <Route path="messages" element={
-                            <ProtectedRoute>
-                              <MessagesPage />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="ai-chat" element={
-                            <ProtectedRoute>
-                              <AIChatPage />
-                            </ProtectedRoute>
-                          } />
-
-                          <Route path="search" element={
-                            <ProtectedRoute>
-                              <UserSearch />
-                            </ProtectedRoute>
-                          } />
-                          
-                        </Route>
-                        
-                        {/* 404重定向 */}
-                        <Route path="*" element={<Navigate to="/" />} />
-                      </Routes>
-                    </PageTransition>
-                  </>
-                } />
-              </Routes>
+              <AppContent />
             </Router>
           </AntdApp>
         </ThemeProvider>

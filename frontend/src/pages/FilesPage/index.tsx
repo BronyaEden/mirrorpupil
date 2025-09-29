@@ -25,6 +25,40 @@ const FilesContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 16px;
+    
+    .ant-typography-title {
+      font-size: 20px !important;
+      margin-bottom: 24px !important;
+    }
+    
+    .ant-pagination {
+      font-size: 12px;
+      
+      .ant-pagination-item,
+      .ant-pagination-prev,
+      .ant-pagination-next {
+        min-width: 24px;
+        height: 24px;
+        line-height: 22px;
+      }
+      
+      .ant-pagination-options {
+        display: none;
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    
+    .ant-typography-title {
+      font-size: 18px !important;
+      margin-bottom: 20px !important;
+    }
+  }
 `;
 
 const FilterSection = styled(Card)`
@@ -32,6 +66,65 @@ const FilterSection = styled(Card)`
   border: 1px solid rgba(75, 85, 99, 0.5);
   border-radius: 12px;
   margin-bottom: 24px;
+  
+  .desktop-filters {
+    display: block;
+  }
+  
+  .mobile-filters {
+    display: none;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    border-radius: 8px;
+    margin-bottom: 16px;
+    
+    .ant-card-body {
+      padding: 16px;
+    }
+    
+    .desktop-filters {
+      display: none;
+    }
+    
+    .mobile-filters {
+      display: block;
+    }
+    
+    .mobile-filters input,
+    .mobile-filters .ant-select,
+    .mobile-filters .ant-btn {
+      font-size: 14px;
+    }
+    
+    .mobile-filters .ant-select-item {
+      font-size: 14px;
+    }
+    
+    .mobile-filters .ant-select-selector {
+      padding: 0 8px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-card-body {
+      padding: 12px;
+    }
+    
+    .mobile-filters input,
+    .mobile-filters .ant-select,
+    .mobile-filters .ant-btn {
+      font-size: 12px;
+    }
+    
+    .mobile-filters .ant-select-item {
+      font-size: 12px;
+    }
+    
+    .mobile-filters .ant-select-selector {
+      padding: 0 6px;
+    }
+  }
 `;
 
 const FileGrid = styled.div`
@@ -39,6 +132,17 @@ const FileGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const FilesPage: React.FC = () => {
@@ -171,55 +275,126 @@ const FilesPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Title level={2} style={{ color: '#fff', marginBottom: 32 }}>
+        <Title 
+          level={2} 
+          style={{ 
+            color: '#fff', 
+            marginBottom: 32
+          }}
+        >
           文件库
         </Title>
         
         <FilterSection>
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <Space>
-              <Input
-                placeholder="搜索文件..."
-                prefix={<SearchOutlined />}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onPressEnter={handleSearch}
-                style={{ width: 300 }}
-              />
-              <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                搜索
-              </Button>
-            </Space>
-            
-            <Space>
-              <Select
-                placeholder="文件类型"
-                value={fileType}
-                onChange={handleFileTypeChange}
-                style={{ width: 150 }}
-              >
-                <Option value="all">全部类型</Option>
-                <Option value="image">图片</Option>
-                <Option value="video">视频</Option>
-                <Option value="audio">音频</Option>
-                <Option value="document">文档</Option>
-              </Select>
+          <div className="desktop-filters">
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Space>
+                <Input
+                  placeholder="搜索文件..."
+                  prefix={<SearchOutlined />}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onPressEnter={handleSearch}
+                  style={{ width: 300 }}
+                />
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                  搜索
+                </Button>
+              </Space>
               
-              <Select
-                placeholder="排序方式"
-                value={sortBy}
-                onChange={handleSortChange}
-                style={{ width: 150 }}
-              >
-                <Option value="createdAt">最新上传</Option>
-                <Option value="downloadCount">最多下载</Option>
-                <Option value="viewCount">最多浏览</Option>
-                <Option value="likeCount">最多点赞</Option>
-              </Select>
-              
-              <Button icon={<FilterOutlined />}>更多筛选</Button>
+              <Space>
+                <Select
+                  placeholder="文件类型"
+                  value={fileType}
+                  onChange={handleFileTypeChange}
+                  style={{ width: 150 }}
+                >
+                  <Option value="all">全部类型</Option>
+                  <Option value="image">图片</Option>
+                  <Option value="video">视频</Option>
+                  <Option value="audio">音频</Option>
+                  <Option value="document">文档</Option>
+                </Select>
+                
+                <Select
+                  placeholder="排序方式"
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  style={{ width: 150 }}
+                >
+                  <Option value="createdAt">最新上传</Option>
+                  <Option value="downloadCount">最多下载</Option>
+                  <Option value="viewCount">最多浏览</Option>
+                  <Option value="likeCount">最多点赞</Option>
+                </Select>
+                
+                <Button icon={<FilterOutlined />}>更多筛选</Button>
+              </Space>
             </Space>
-          </Space>
+          </div>
+          
+          {/* 移动端布局 */}
+          <div className="mobile-filters">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <Input
+                  placeholder="搜索文件..."
+                  prefix={<SearchOutlined />}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onPressEnter={handleSearch}
+                  style={{ flex: 1, fontSize: '14px' }}
+                  size="small"
+                />
+                <Button 
+                  type="primary" 
+                  icon={<SearchOutlined />} 
+                  onClick={handleSearch} 
+                  size="small"
+                  style={{ fontSize: '14px', padding: '0 12px' }}
+                >
+                  搜索
+                </Button>
+              </div>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <Select
+                  placeholder="文件类型"
+                  value={fileType}
+                  onChange={handleFileTypeChange}
+                  style={{ flex: 1, minWidth: '45%', fontSize: '14px' }}
+                  size="small"
+                >
+                  <Option value="all">全部</Option>
+                  <Option value="image">图片</Option>
+                  <Option value="video">视频</Option>
+                  <Option value="audio">音频</Option>
+                  <Option value="document">文档</Option>
+                </Select>
+                
+                <Select
+                  placeholder="排序"
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  style={{ flex: 1, minWidth: '45%', fontSize: '14px' }}
+                  size="small"
+                >
+                  <Option value="createdAt">最新</Option>
+                  <Option value="downloadCount">下载</Option>
+                  <Option value="viewCount">浏览</Option>
+                  <Option value="likeCount">点赞</Option>
+                </Select>
+                
+                <Button 
+                  icon={<FilterOutlined />} 
+                  size="small" 
+                  style={{ flex: 1, minWidth: '45%', fontSize: '14px', padding: '0 12px' }}
+                >
+                  筛选
+                </Button>
+              </div>
+            </div>
+          </div>
         </FilterSection>
         
         {loading ? (

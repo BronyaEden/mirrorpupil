@@ -379,4 +379,32 @@ export const GlobalStyles = createGlobalStyle`
   p {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
+  
+  /* 移动端特定样式 */
+  @media (max-width: 768px) {
+    /* 隐藏桌面端导航栏在移动端的显示 */
+    .desktop-navbar {
+      display: none;
+    }
+    
+    /* 确保移动端导航栏正确显示 */
+    .mobile-navbar {
+      display: flex;
+    }
+    
+    .mobile-top-navbar {
+      display: flex;
+    }
+  }
+  
+  @media (min-width: 769px) {
+    /* 在桌面端隐藏移动端导航栏 */
+    .mobile-navbar {
+      display: none;
+    }
+    
+    .mobile-top-navbar {
+      display: none;
+    }
+  }
 `;

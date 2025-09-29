@@ -41,41 +41,49 @@ interface FileCardProps {
 const StyledCard = styled(motion(Card))`
   background: ${props => props.theme.colors.background.secondary};
   border: 1px solid ${props => props.theme.colors.neutral.gray400};
-  border-radius: ${props => props.theme.borderRadius.lg};
+  border-radius: ${props => props.theme.borderRadius.md};
   overflow: hidden;
   transition: all 0.3s ease;
   height: 100%;
   
   &:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: ${props => props.theme.shadows.glow};
     border-color: ${props => props.theme.colors.primary.main};
   }
   
   .ant-card-body {
-    padding: ${props => props.theme.spacing.md};
+    padding: ${props => props.theme.spacing.sm};
   }
   
   .ant-card-meta-title {
     color: ${props => props.theme.colors.text.primary};
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
   }
   
   .ant-card-meta-description {
     color: ${props => props.theme.colors.text.secondary};
   }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    border-radius: ${props => props.theme.borderRadius.sm};
+    
+    .ant-card-body {
+      padding: ${props => props.theme.spacing.xs};
+    }
+  }
 `;
 
 const FilePreview = styled.div<{ fileType: string }>`
   width: 100%;
-  height: 200px;
+  height: 150px;
   background: ${props => props.theme.colors.background.surface};
-  border-radius: ${props => props.theme.borderRadius.md};
+  border-radius: ${props => props.theme.borderRadius.sm};
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: ${props => props.theme.spacing.md};
+  margin-bottom: ${props => props.theme.spacing.sm};
   overflow: hidden;
   position: relative;
   
@@ -96,10 +104,16 @@ const FilePreview = styled.div<{ fileType: string }>`
   &:hover::after {
     opacity: 1;
   }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    height: 120px;
+    border-radius: ${props => props.theme.borderRadius.xs};
+    margin-bottom: ${props => props.theme.spacing.xs};
+  }
 `;
 
 const FileTypeIcon = styled.div<{ fileType: string }>`
-  font-size: 3rem;
+  font-size: 2rem;
   color: ${props => {
     switch (props.fileType) {
       case 'image': return '#52c41a';
@@ -109,38 +123,64 @@ const FileTypeIcon = styled.div<{ fileType: string }>`
       default: return props.theme.colors.neutral.gray500;
     }
   }};
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 1.5rem;
+  }
 `;
 
 const FileInfo = styled.div`
-  margin-top: ${props => props.theme.spacing.sm};
+  margin-top: ${props => props.theme.spacing.xs};
 `;
 
 const FileStats = styled(Space)`
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   
   .anticon {
-    margin-right: 4px;
+    margin-right: 2px;
+    font-size: 0.75rem;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 0.7rem;
+    
+    .anticon {
+      font-size: 0.7rem;
+    }
   }
 `;
 
 const ActionButtons = styled(Space)`
-  margin-top: ${props => props.theme.spacing.md};
+  margin-top: ${props => props.theme.spacing.sm};
   width: 100%;
   justify-content: space-between;
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-top: ${props => props.theme.spacing.xs};
+  }
 `;
 
 const TagContainer = styled.div`
-  margin: ${props => props.theme.spacing.sm} 0;
+  margin: ${props => props.theme.spacing.xs} 0;
   
   .ant-tag {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     background: rgba(0, 217, 255, 0.1);
     border-color: ${props => props.theme.colors.primary.main};
     color: ${props => props.theme.colors.primary.main};
-    font-size: 0.75rem;
-    padding: 2px 6px;
+    font-size: 0.65rem;
+    padding: 1px 4px;
     line-height: 1.2;
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin: ${props => props.theme.spacing.xxs} 0;
+    
+    .ant-tag {
+      font-size: 0.6rem;
+      padding: 1px 3px;
+    }
   }
 `;
 
@@ -199,13 +239,13 @@ const FileCard: React.FC<FileCardProps> = ({
       {
         key: 'edit',
         icon: <EditOutlined />,
-        label: '编辑信息',
+        label: '编辑',
         onClick: () => onEdit && onEdit(file)
       },
       {
         key: 'delete',
         icon: <DeleteOutlined />,
-        label: '删除文件',
+        label: '删除',
         danger: true,
         onClick: () => onDelete && onDelete(file)
       }
@@ -226,6 +266,7 @@ const FileCard: React.FC<FileCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3 }}
+      size="small"
     >
       <FilePreview fileType={file.fileType}>
         {file.fileType === 'image' ? (
@@ -246,11 +287,11 @@ const FileCard: React.FC<FileCardProps> = ({
 
       <Meta
         title={
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <Text ellipsis style={{ fontSize: '1rem', fontWeight: 600 }}>
+          <Space direction="vertical" size={2} style={{ width: '100%' }}>
+            <Text ellipsis style={{ fontSize: '0.9rem', fontWeight: 600 }}>
               {file.displayName}
             </Text>
-            <Text type="secondary" style={{ fontSize: '0.85rem' }}>
+            <Text type="secondary" style={{ fontSize: '0.75rem' }}>
               {file.fileSizeFormatted} • {file.mimeType}
             </Text>
           </Space>
@@ -262,8 +303,8 @@ const FileCard: React.FC<FileCardProps> = ({
                 ellipsis={{ rows: 2 }} 
                 style={{ 
                   color: '#B0BEC5', 
-                  fontSize: '0.9rem',
-                  marginBottom: 8 
+                  fontSize: '0.8rem',
+                  marginBottom: 6 
                 }}
               >
                 {file.description}
@@ -283,21 +324,21 @@ const FileCard: React.FC<FileCardProps> = ({
               </TagContainer>
             )}
             
-            <Space split="•" style={{ width: '100%', fontSize: '0.8rem', color: '#78909C' }}>
-              <Space>
-                <Avatar size={16} src={file.uploader?.avatar}>
+            <Space split="•" style={{ width: '100%', fontSize: '0.7rem', color: '#78909C' }}>
+              <Space size={2}>
+                <Avatar size={14} src={file.uploader?.avatar}>
                   {file.uploader?.username?.[0]?.toUpperCase()}
                 </Avatar>
-                <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                <Text type="secondary" style={{ fontSize: '0.7rem' }}>
                   {file.uploader?.username}
                 </Text>
               </Space>
-              <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+              <Text type="secondary" style={{ fontSize: '0.7rem' }}>
                 {dayjs(file.createdAt).fromNow()}
               </Text>
             </Space>
             
-            <FileStats>
+            <FileStats size={2}>
               <span><EyeOutlined />{file.viewCount}</span>
               <span><DownloadOutlined />{file.downloadCount}</span>
               <span>
@@ -310,23 +351,26 @@ const FileCard: React.FC<FileCardProps> = ({
       />
 
       {showActions && (
-        <ActionButtons>
+        <ActionButtons size={2}>
           <Button 
             type="primary" 
             size="small"
             icon={<DownloadOutlined />}
             onClick={handleDownload}
+            style={{ fontSize: '12px', padding: '0 8px' }}
           >
             下载
           </Button>
           
-          <Space>
+          <Space size={2}>
             <Button
               size="small"
               icon={file.likeCount > 0 ? <HeartFilled /> : <HeartOutlined />}
               onClick={handleLike}
               style={{
-                color: file.likeCount > 0 ? '#ff4d4f' : undefined
+                color: file.likeCount > 0 ? '#ff4d4f' : undefined,
+                fontSize: '12px',
+                padding: '0 6px'
               }}
             />
             
@@ -340,6 +384,7 @@ const FileCard: React.FC<FileCardProps> = ({
                   size="small" 
                   icon={<MoreOutlined />}
                   onClick={(e) => e.stopPropagation()}
+                  style={{ fontSize: '12px', padding: '0 6px' }}
                 />
               </Dropdown>
             )}

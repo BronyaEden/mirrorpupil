@@ -194,6 +194,16 @@ const ContentTabs = styled(Tabs)`
   
   .ant-tabs-tab {
     color: ${props => props.theme.colors.text.secondary};
+    font-size: 14px;
+    padding: 8px 16px;
+    
+    .desktop-text {
+      display: inline;
+    }
+    
+    .mobile-text {
+      display: none;
+    }
     
     &.ant-tabs-tab-active {
       color: ${props => props.theme.colors.primary.main};
@@ -202,6 +212,34 @@ const ContentTabs = styled(Tabs)`
   
   .ant-tabs-ink-bar {
     background: ${props => props.theme.colors.primary.main};
+  }
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    .ant-tabs-nav {
+      padding: ${props => props.theme.spacing.xs};
+    }
+    
+    .ant-tabs-tab {
+      font-size: 12px;
+      padding: 4px 8px;
+      margin: 0 2px;
+      
+      .desktop-text {
+        display: none;
+      }
+      
+      .mobile-text {
+        display: inline;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .ant-tabs-tab {
+        font-size: 11px;
+        padding: 3px 6px;
+        margin: 0 1px;
+      }
+    }
   }
 `;
 
@@ -280,6 +318,8 @@ const ChatButton = styled(Button)`
     transform: translateY(-1px);
   }
 `;
+
+
 
 const UserProfile: React.FC<UserProfileProps> = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -899,44 +939,58 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         </Card>
         
         {/* 统计数据 */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col xs={12} sm={6}>
+        <Row gutter={[8, 8]} style={{ marginBottom: 24 }}>
+          <Col xs={6}>
             <StatsCard 
               onClick={() => navigate(`/profile/${userData?._id}/files`)}
-              style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+              style={{ cursor: 'pointer', transition: 'all 0.3s', height: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
               hoverable
             >
               <Statistic
-                title="文件数量"
+                title={<span style={{ fontSize: '12px' }}>文件数量</span>}
                 value={userStats?.totalFiles || 0}
-                prefix={<FileOutlined />}
+                prefix={<FileOutlined style={{ fontSize: '14px' }} />}
+                valueStyle={{ fontSize: '16px', marginTop: '4px' }}
               />
             </StatsCard>
           </Col>
-          <Col xs={12} sm={6}>
-            <StatsCard>
+          <Col xs={6}>
+            <StatsCard 
+              style={{ height: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+            >
               <Statistic
-                title="总浏览量"
+                title={<span style={{ fontSize: '12px' }}>总浏览量</span>}
                 value={userStats?.totalViews || 0}
-                prefix={<EyeOutlined />}
+                prefix={<EyeOutlined style={{ fontSize: '14px' }} />}
+                valueStyle={{ fontSize: '16px', marginTop: '4px' }}
               />
             </StatsCard>
           </Col>
-          <Col xs={12} sm={6}>
-            <StatsCard>
+          <Col xs={6}>
+            <StatsCard 
+              style={{ height: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+            >
               <Statistic
-                title="总下载量"
+                title={<span style={{ fontSize: '12px' }}>总下载量</span>}
                 value={userStats?.totalDownloads || 0}
-                prefix={<DownloadOutlined />}
+                prefix={<DownloadOutlined style={{ fontSize: '14px' }} />}
+                valueStyle={{ fontSize: '16px', marginTop: '4px' }}
               />
             </StatsCard>
           </Col>
-          <Col xs={12} sm={6}>
-            <StatsCard>
+          <Col xs={6}>
+            <StatsCard 
+              style={{ height: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              bodyStyle={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+            >
               <Statistic
-                title="获得点赞"
+                title={<span style={{ fontSize: '12px' }}>获得点赞</span>}
                 value={userStats?.totalLikes || 0}
-                prefix={<HeartOutlined />}
+                prefix={<HeartOutlined style={{ fontSize: '14px' }} />}
+                valueStyle={{ fontSize: '16px', marginTop: '4px' }}
               />
             </StatsCard>
           </Col>
@@ -944,25 +998,25 @@ const UserProfile: React.FC<UserProfileProps> = () => {
         
         {/* 内容标签页 */}
         <ContentTabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane tab="上传的文件" key="files">
+          <TabPane tab={<><span className="desktop-text">上传的文件</span><span className="mobile-text">文件</span></>} key="files">
             {userData && (
               <UserFilesPage />
             )}
           </TabPane>
           
-          <TabPane tab={`关注者 (${followStatus.followersCount})`} key="followers">
+          <TabPane tab={<><span className="desktop-text">关注者 ({followStatus.followersCount})</span><span className="mobile-text">关注者 ({followStatus.followersCount})</span></>} key="followers">
             {userData && (
               <FollowList userId={userData._id} type="followers" />
             )}
           </TabPane>
           
-          <TabPane tab={`关注中 (${followStatus.followingCount})`} key="following">
+          <TabPane tab={<><span className="desktop-text">关注中 ({followStatus.followingCount})</span><span className="mobile-text">关注中 ({followStatus.followingCount})</span></>} key="following">
             {userData && (
               <FollowList userId={userData._id} type="following" />
             )}
           </TabPane>
           
-          <TabPane tab="点赞的文件" key="liked">
+          <TabPane tab={<><span className="desktop-text">点赞的文件</span><span className="mobile-text">点赞</span></>} key="liked">
             <Empty
               description="点赞列表功能待实现"
               style={{ color: '#B0BEC5', padding: '60px 0' }}

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { logout } from '../../store/authSlice';
+import { mediaQuery } from '../../styles/responsive';
 
 interface GlobalHeaderProps {
   onMenuClick?: () => void;
@@ -41,7 +42,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
         top: '0',
         left: '0',
         right: '0',
-        zIndex: '999999', // 极高的z-index
+        zIndex: 999999, // 极高的z-index
         width: '100%',
         height: '64px',
         padding: '0 24px',
@@ -270,8 +271,20 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
           background-position: 100% 50%;
         }
       }
+      
+      /* 在移动端隐藏 */
+      @media (max-width: 768px) {
+        #global-header {
+          display: none;
+        }
+      }
     `;
     document.head.appendChild(style);
+
+    // 为header添加ID以便在CSS中选择
+    if (headerRef.current) {
+      headerRef.current.id = 'global-header';
+    }
 
     return () => {
       if (style.parentNode) {
