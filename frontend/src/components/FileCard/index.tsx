@@ -68,9 +68,18 @@ const StyledCard = styled(motion(Card))`
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     border-radius: ${props => props.theme.borderRadius.sm};
+    margin-bottom: 8px;
     
     .ant-card-body {
       padding: ${props => props.theme.spacing.xs};
+    }
+    
+    .ant-card-meta-title {
+      font-size: 0.8rem;
+    }
+    
+    .ant-card-meta-description {
+      font-size: 0.7rem;
     }
   }
 `;
@@ -106,7 +115,7 @@ const FilePreview = styled.div<{ fileType: string }>`
   }
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    height: 120px;
+    height: 100px;
     border-radius: ${props => props.theme.borderRadius.xs};
     margin-bottom: ${props => props.theme.spacing.xs};
   }
@@ -125,12 +134,16 @@ const FileTypeIcon = styled.div<{ fileType: string }>`
   }};
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 `;
 
 const FileInfo = styled.div`
   margin-top: ${props => props.theme.spacing.xs};
+  
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-top: ${props => props.theme.spacing.xxs};
+  }
 `;
 
 const FileStats = styled(Space)`
@@ -143,10 +156,11 @@ const FileStats = styled(Space)`
   }
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     
     .anticon {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      margin-right: 1px;
     }
   }
 `;
@@ -157,7 +171,8 @@ const ActionButtons = styled(Space)`
   justify-content: space-between;
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-top: ${props => props.theme.spacing.xs};
+    margin-top: ${props => props.theme.spacing.xxs};
+    gap: 2px;
   }
 `;
 
@@ -178,8 +193,9 @@ const TagContainer = styled.div`
     margin: ${props => props.theme.spacing.xxs} 0;
     
     .ant-tag {
-      font-size: 0.6rem;
-      padding: 1px 3px;
+      font-size: 0.55rem;
+      padding: 1px 2px;
+      margin-bottom: 1px;
     }
   }
 `;
@@ -303,8 +319,8 @@ const FileCard: React.FC<FileCardProps> = ({
                 ellipsis={{ rows: 2 }} 
                 style={{ 
                   color: '#B0BEC5', 
-                  fontSize: '0.8rem',
-                  marginBottom: 6 
+                  fontSize: '0.7rem',
+                  marginBottom: 4 
                 }}
               >
                 {file.description}
@@ -324,16 +340,24 @@ const FileCard: React.FC<FileCardProps> = ({
               </TagContainer>
             )}
             
-            <Space split="•" style={{ width: '100%', fontSize: '0.7rem', color: '#78909C' }}>
+            <Space 
+              split="•" 
+              style={{ 
+                width: '100%', 
+                fontSize: '0.7rem', 
+                color: '#78909C',
+                flexWrap: 'wrap'
+              }}
+            >
               <Space size={2}>
-                <Avatar size={14} src={file.uploader?.avatar}>
+                <Avatar size={12} src={file.uploader?.avatar}>
                   {file.uploader?.username?.[0]?.toUpperCase()}
                 </Avatar>
-                <Text type="secondary" style={{ fontSize: '0.7rem' }}>
+                <Text type="secondary" style={{ fontSize: '0.65rem' }}>
                   {file.uploader?.username}
                 </Text>
               </Space>
-              <Text type="secondary" style={{ fontSize: '0.7rem' }}>
+              <Text type="secondary" style={{ fontSize: '0.65rem' }}>
                 {dayjs(file.createdAt).fromNow()}
               </Text>
             </Space>
@@ -357,7 +381,7 @@ const FileCard: React.FC<FileCardProps> = ({
             size="small"
             icon={<DownloadOutlined />}
             onClick={handleDownload}
-            style={{ fontSize: '12px', padding: '0 8px' }}
+            style={{ fontSize: '11px', padding: '0 6px', height: '28px' }}
           >
             下载
           </Button>
@@ -369,8 +393,9 @@ const FileCard: React.FC<FileCardProps> = ({
               onClick={handleLike}
               style={{
                 color: file.likeCount > 0 ? '#ff4d4f' : undefined,
-                fontSize: '12px',
-                padding: '0 6px'
+                fontSize: '11px',
+                padding: '0 4px',
+                height: '28px'
               }}
             />
             
@@ -384,7 +409,7 @@ const FileCard: React.FC<FileCardProps> = ({
                   size="small" 
                   icon={<MoreOutlined />}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: '12px', padding: '0 6px' }}
+                  style={{ fontSize: '11px', padding: '0 4px', height: '28px' }}
                 />
               </Dropdown>
             )}
