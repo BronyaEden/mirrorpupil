@@ -16,6 +16,10 @@ const StyledLayout = styled(AntLayout)`
   
   /* 确保不影响Header的固定定位 */
   overflow-x: hidden;
+  
+  /* 防止移动端内容溢出 */
+  width: 100vw;
+  max-width: 100vw;
 `;
 
 const StyledContent = styled(Content)`
@@ -27,6 +31,11 @@ const StyledContent = styled(Content)`
   
   ${mediaQuery.mobile(`
     padding: 56px clamp(2px, 1vw, 6px) 56px clamp(2px, 1vw, 6px); /* 为顶部和底部导航栏预留空间 */
+    /* 防止移动端内容溢出 */
+    overflow-x: hidden;
+    width: 100vw;
+    max-width: 100vw;
+    box-sizing: border-box;
   `)}
   
   ${mediaQuery.lg(`
@@ -38,6 +47,11 @@ const MainContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  
+  ${mediaQuery.mobile(`
+    /* 移动端限制最大宽度以防止溢出 */
+    max-width: 100%;
+  `)}
 `;
 
 const Layout: React.FC = () => {

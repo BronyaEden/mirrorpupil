@@ -26,6 +26,11 @@ const MobileTopNavbarContainer = styled.div`
   z-index: 999999;
   padding: 0 clamp(8px, 2vw, 16px);
   
+  /* 添加防抖动和固定定位强化 */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  
   ${mediaQuery.desktop(`
     display: none;
   `)}
@@ -73,6 +78,11 @@ const NavButton = styled.div`
   .icon {
     font-size: 18px;
     margin-bottom: 4px;
+  }
+  
+  /* 重置hover状态下的transform，防止按钮位移 */
+  &:hover {
+    transform: none;
   }
 `;
 

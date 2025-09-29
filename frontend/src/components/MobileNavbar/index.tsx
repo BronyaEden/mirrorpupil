@@ -28,6 +28,11 @@ const MobileNavbarContainer = styled.div`
   z-index: 999999;
   padding: 0 clamp(2px, 0.5vw, 4px);
   
+  /* 添加防抖动和固定定位强化 */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  
   ${mediaQuery.desktop(`
     display: none;
   `)}
@@ -54,6 +59,11 @@ const NavItem = styled.div<{ active?: boolean }>`
   &.active {
     color: #00FFFF;
     background: rgba(0, 255, 255, 0.15);
+  }
+  
+  /* 重置hover状态下的transform，防止按钮位移 */
+  &:hover {
+    transform: none;
   }
 `;
 
