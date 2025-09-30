@@ -129,6 +129,20 @@ const AppContent: React.FC = () => {
           {/* 公开路由 */}
           <Route path="/auth" element={<AuthPage />} />
           
+          {/* 管理员路由 */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="files" element={<AdminFiles />} />
+            <Route path="messages" element={<AdminMessages />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="system" element={<AdminSystem />} />
+            <Route path="security" element={<AdminSecurity />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
+          
           {/* 应用主体 - 不再包含Header */}
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />

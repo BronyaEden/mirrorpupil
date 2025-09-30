@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useViewport } from '../../hooks/useResponsive';
 
 interface GlobalMouseEffectsProps {
@@ -6,13 +7,17 @@ interface GlobalMouseEffectsProps {
 }
 
 const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = false }) => {
+  const location = useLocation();
   const { isMobile } = useViewport();
 
+  // 检查当前是否在管理员页面
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   useEffect(() => {
-    if (disabled || isMobile) {
+    // 如果是管理员页面、禁用状态或移动端，不执行鼠标特效逻辑
+    if (isAdminPage || disabled || isMobile) {
       return;
     }
-
 
     // 清理现有的鼠标特效元素
     const cleanupExisting = () => {
@@ -221,7 +226,7 @@ const GlobalMouseEffects: React.FC<GlobalMouseEffectsProps> = ({ disabled = fals
         styles.remove();
       }
     };
-  }, [disabled, isMobile]);
+  }, [disabled, isMobile, isAdminPage]);
 
   return null;
 };

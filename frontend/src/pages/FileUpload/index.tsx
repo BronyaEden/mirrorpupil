@@ -11,7 +11,8 @@ import {
   Space, 
   Tag, 
   Progress,
-  Modal
+  Modal,
+  message
 } from 'antd';
 import { 
   InboxOutlined, 
@@ -240,6 +241,52 @@ const StyledButton = styled(Button)`
   }
 `;
 
+// 支持的文件类型列表
+const SUPPORTED_FILE_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/tiff', 'image/bmp',
+  'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
+  'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac',
+  'application/pdf', 'text/plain', 'text/csv',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+  'application/json', 'application/xml'
+];
+
+// 文件类型显示名称映射
+const FILE_TYPE_NAMES: Record<string, string> = {
+  'image/jpeg': 'JPEG 图片',
+  'image/png': 'PNG 图片',
+  'image/gif': 'GIF 图片',
+  'image/webp': 'WebP 图片',
+  'image/svg+xml': 'SVG 图片',
+  'image/tiff': 'TIFF 图片',
+  'image/bmp': 'BMP 图片',
+  'video/mp4': 'MP4 视频',
+  'video/webm': 'WebM 视频',
+  'video/quicktime': 'MOV 视频',
+  'video/x-msvideo': 'AVI 视频',
+  'audio/mp3': 'MP3 音频',
+  'audio/wav': 'WAV 音频',
+  'audio/ogg': 'OGG 音频',
+  'audio/aac': 'AAC 音频',
+  'application/pdf': 'PDF 文档',
+  'text/plain': '文本文件',
+  'text/csv': 'CSV 文件',
+  'application/msword': 'Word 文档',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word 文档',
+  'application/vnd.ms-excel': 'Excel 表格',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel 表格',
+  'application/vnd.ms-powerpoint': 'PowerPoint 演示文稿',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint 演示文稿',
+  'application/zip': 'ZIP 压缩文件',
+  'application/x-rar-compressed': 'RAR 压缩文件',
+  'application/x-7z-compressed': '7Z 压缩文件',
+  'application/json': 'JSON 文件',
+  'application/xml': 'XML 文件'
+};
+
 const FileUpload: React.FC = () => {
   const [form] = Form.useForm<FileUploadForm>();
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -310,6 +357,13 @@ const FileUpload: React.FC = () => {
   };
 
   const handleFileSelect = (file: File) => {
+    // 检查文件类型是否支持
+    if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+      const fileTypeName = FILE_TYPE_NAMES[file.type] || file.type;
+      message.error(`不支持的文件类型: ${fileTypeName || '未知类型'}。请选择支持的文件类型进行上传。`);
+      return false;
+    }
+
     setUploadFile(file);
     
     // 自动填充显示名称

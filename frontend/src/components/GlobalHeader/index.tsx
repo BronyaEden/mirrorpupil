@@ -17,6 +17,9 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
+  // 检查当前是否在管理员页面
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/auth');
@@ -61,6 +64,9 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onMenuClick }) => {
         /* 防止被其他元素影响 */
         isolation: 'isolate',
         transform: 'translateZ(0)', // 创建新的层叠上下文
+        
+        /* 如果是管理员页面，隐藏Header */
+        display: isAdminPage ? 'none' : 'flex',
       }}
     >
       {/* 左侧：Logo和导航 */}

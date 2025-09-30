@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Row,
   Col,
@@ -27,6 +27,8 @@ import { motion } from 'framer-motion';
 import FileCard from '../../components/FileCard';
 import { FileItem } from '../../types';
 import api from '../../utils/api';
+import { useViewport } from '../../hooks/useResponsive';
+import { mediaQuery } from '../../styles/responsive';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -147,7 +149,14 @@ const FileGrid = styled.div<{ viewMode: 'grid' | 'list' }>`
     };
   }
   
+  /* 移动端网格布局优化 - 一排两个 */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: ${props => props.theme.spacing.sm};
+  }
+  
+  /* 小屏幕设备适配 */
+  @media (max-width: 480px) {
     grid-template-columns: 1fr;
     gap: ${props => props.theme.spacing.md};
   }
@@ -196,6 +205,10 @@ const FileExplorer: React.FC = () => {
     pageSize: 20,
     total: 0
   });
+  const { isMobile } = useViewport();
+  const gridRef = useRef<HTMLDivElement>(null);
+
+
 
   // 加载真实数据
   useEffect(() => {
@@ -541,7 +554,7 @@ const FileExplorer: React.FC = () => {
           </EmptyContainer>
         ) : (
           <>
-            <FileGrid viewMode={viewMode}>
+            <FileGrid ref={gridRef} viewMode={viewMode}>
               {files.map((file, index) => (
                 <motion.div
                   key={file._id}
