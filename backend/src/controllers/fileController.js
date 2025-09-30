@@ -124,9 +124,13 @@ class FileController {
         req.user?.userId
       );
 
-      // 设置响应头
+      // 设置响应头，正确处理中文文件名编码
       res.set('Content-Type', file.mimeType);
-      res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+      
+      // 使用RFC 5987标准编码文件名，支持中文等非ASCII字符
+      const encodedFilename = encodeURIComponent(filename);
+      res.set('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
+      
       res.set('Content-Length', fileData.length);
 
       // 发送文件数据

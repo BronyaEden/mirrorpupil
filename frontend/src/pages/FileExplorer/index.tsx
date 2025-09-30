@@ -52,8 +52,8 @@ const ExplorerContainer = styled.div`
 `;
 
 const FilterBar = styled(Card)`
-  background: ${props => props.theme.colors.background.secondary};
-  border: 1px solid ${props => props.theme.colors.neutral.gray400};
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%);
+  border: 1px solid #ced4da;
   border-radius: ${props => props.theme.borderRadius.lg};
   margin-bottom: ${props => props.theme.spacing.lg};
   

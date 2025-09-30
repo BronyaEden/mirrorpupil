@@ -39,8 +39,26 @@ interface FileCardProps {
   isOwner?: boolean;
 }
 
+// 添加一个函数来获取头像URL
+const getAvatarUrl = (file: FileItem) => {
+  // 首先检查file.uploader是否存在且有avatar字段
+  if (file.uploader?.avatar) {
+    // 如果avatar是ObjectId格式，则构建图片API URL
+    if (/^[0-9a-fA-F]{24}$/.test(file.uploader.avatar)) {
+      return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/images/${file.uploader.avatar}`;
+    }
+    // 如果已经是完整URL，则直接返回
+    return file.uploader.avatar;
+  }
+  
+
+  
+  // 如果没有头像，返回null
+  return null;
+};
+
 const StyledCard = styled(motion(Card))`
-  background: ${props => props.theme.colors.background.secondary};
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%);
   border: 1px solid ${props => props.theme.colors.neutral.gray400};
   border-radius: ${props => props.theme.borderRadius.md};
   overflow: hidden;
@@ -50,7 +68,7 @@ const StyledCard = styled(motion(Card))`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.glow};
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     border-color: ${props => props.theme.colors.primary.main};
   }
   
@@ -59,13 +77,13 @@ const StyledCard = styled(motion(Card))`
   }
   
   .ant-card-meta-title {
-    color: ${props => props.theme.colors.text.primary};
+    color: #212529;
     font-size: 0.9rem;
     font-weight: 600;
   }
   
   .ant-card-meta-description {
-    color: ${props => props.theme.colors.text.secondary};
+    color: #495057;
   }
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
@@ -99,7 +117,7 @@ const StyledCard = styled(motion(Card))`
 const FilePreview = styled.div<{ fileType: string }>`
   width: 100%;
   height: 150px;
-  background: ${props => props.theme.colors.background.surface};
+  background: linear-gradient(135deg, rgba(241, 243, 245, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%);
   border-radius: ${props => props.theme.borderRadius.sm};
   display: flex;
   align-items: center;
@@ -167,7 +185,7 @@ const FileInfo = styled.div`
 `;
 
 const FileStats = styled(Space)`
-  color: ${props => props.theme.colors.text.secondary};
+  color: #6c757d;
   font-size: 0.75rem;
   
   .anticon {
@@ -209,9 +227,9 @@ const TagContainer = styled.div`
   
   .ant-tag {
     margin-bottom: 2px;
-    background: rgba(0, 217, 255, 0.1);
-    border-color: ${props => props.theme.colors.primary.main};
-    color: ${props => props.theme.colors.primary.main};
+    background: rgba(0, 123, 255, 0.1);
+    border-color: #007bff;
+    color: #007bff;
     font-size: 0.65rem;
     padding: 1px 4px;
     line-height: 1.2;
@@ -274,7 +292,7 @@ const CompactFileStats = styled.div`
 `;
 
 const CompactStats = styled(Space)`
-  color: ${props => props.theme.colors.text.secondary};
+  color: #6c757d;
   font-size: 0.75rem;
   
   .anticon {
@@ -385,6 +403,8 @@ const FileCard: React.FC<FileCardProps> = ({
     }
   };
 
+
+
   const menuItems = [
     ...(isOwner ? [
       {
@@ -454,7 +474,7 @@ const FileCard: React.FC<FileCardProps> = ({
                 <Paragraph 
                   ellipsis={{ rows: 2 }} 
                   style={{ 
-                    color: '#B0BEC5', 
+                    color: '#6c757d', 
                     fontSize: '0.7rem',
                     marginBottom: 4 
                   }}
@@ -481,19 +501,22 @@ const FileCard: React.FC<FileCardProps> = ({
                 style={{ 
                   width: '100%', 
                   fontSize: '0.7rem', 
-                  color: '#78909C',
+                  color: '#6c757d',
                   flexWrap: 'wrap'
                 }}
               >
                 <Space size={2}>
-                  <Avatar size={12} src={file.uploader?.avatar}>
-                    {file.uploader?.username?.[0]?.toUpperCase()}
+                  <Avatar 
+                    size={isMobile ? 16 : 20} 
+                    src={getAvatarUrl(file)}
+                  >
+                    {(file.uploader?.username || file.uploaderId)?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
-                  <Text type="secondary" style={{ fontSize: '0.65rem' }}>
-                    {file.uploader?.username}
+                  <Text type="secondary" style={{ fontSize: isMobile ? '0.6rem' : '0.65rem' }}>
+                    {file.uploader?.username || '未知用户'}
                   </Text>
                 </Space>
-                <Text type="secondary" style={{ fontSize: '0.65rem' }}>
+                <Text type="secondary" style={{ fontSize: isMobile ? '0.6rem' : '0.65rem' }}>
                   {dayjs(file.createdAt).fromNow()}
                 </Text>
               </Space>

@@ -62,8 +62,8 @@ const FilesContainer = styled.div`
 `;
 
 const FilterSection = styled(Card)`
-  background: rgba(31, 41, 55, 0.5);
-  border: 1px solid rgba(75, 85, 99, 0.5);
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%);
+  border: 1px solid #ced4da;
   border-radius: 12px;
   margin-bottom: 24px;
   
@@ -134,7 +134,7 @@ const FileGrid = styled.div`
   margin-bottom: 32px;
   
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     margin-bottom: 24px;
   }
@@ -175,6 +175,8 @@ const FilesPage: React.FC = () => {
         }
         
         const response = await api.get('/files', { params });
+        
+
         
         if (response.data.success) {
           setFiles(response.data.data.files);

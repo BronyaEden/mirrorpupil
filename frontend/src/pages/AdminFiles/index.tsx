@@ -120,6 +120,8 @@ const AdminFiles: React.FC = () => {
     loadStats();
   }, []);
 
+
+
   const loadStats = async () => {
     try {
       const response = await adminAPI.getDashboardStats();
@@ -263,21 +265,35 @@ const AdminFiles: React.FC = () => {
     {
       title: '上传者',
       key: 'uploader',
-      render: (record: FileData) => (
-        <Space>
-          <Avatar 
-            src={undefined} 
-            icon={<UserOutlined />} 
-            size="small"
-          />
-          <div>
-            <div style={{ fontWeight: 500 }}>{record.uploader?.username || '未知'}</div>
-            <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.uploader?.email || '未知邮箱'}
-            </Typography.Text>
-          </div>
-        </Space>
-      )
+      render: (record: FileData) => {
+        // 获取头像URL
+        let avatarUrl = null;
+        if (record.uploader?.avatar) {
+          // 如果avatar是ObjectId格式，则构建图片API URL
+          if (/^[0-9a-fA-F]{24}$/.test(record.uploader.avatar)) {
+            avatarUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/images/${record.uploader.avatar}`;
+          } else {
+            // 如果已经是完整URL，则直接使用
+            avatarUrl = record.uploader.avatar;
+          }
+        }
+        
+        return (
+          <Space>
+            <Avatar 
+              src={avatarUrl} 
+              icon={<UserOutlined />} 
+              size="small"
+            />
+            <div>
+              <div style={{ fontWeight: 500 }}>{record.uploader?.username || '未知'}</div>
+              <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                {record.uploader?.email || '未知邮箱'}
+              </Typography.Text>
+            </div>
+          </Space>
+        );
+      }
     },
     {
       title: '统计',

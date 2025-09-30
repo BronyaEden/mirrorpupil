@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
+import { AnimatePresence } from 'framer-motion';
 import { RootState } from '../../store';
 import { logout } from '../../store/authSlice';
 import { 
@@ -9,6 +10,7 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 import { mediaQuery } from '../../styles/responsive';
+import DropdownMenu from '../DropdownMenu';
 
 const MobileTopNavbarContainer = styled.div`
   position: fixed;
@@ -100,6 +102,8 @@ const MobileTopNavbar: React.FC<MobileTopNavbarProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const navbarRef = useRef<HTMLDivElement>(null);
 
   const handleLogoClick = () => {
     navigate('/');
@@ -110,24 +114,57 @@ const MobileTopNavbar: React.FC<MobileTopNavbarProps> = ({ onMenuClick }) => {
     navigate('/');
   };
 
+  const toggleDropdown = () => {
+    setDropdownVisible(!dropdownVisible);
+  };
+
+  const closeDropdown = () => {
+    setDropdownVisible(false);
+  };
+
+  // 点击外部区域关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navbarRef.current && !navbarRef.current.contains(event.target as Node)) {
+        closeDropdown();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 页面路由变化时关闭下拉菜单
+  useEffect(() => {
+    closeDropdown();
+  }, [location]);
+
   return (
-    <MobileTopNavbarContainer className="mobile-top-navbar">
-      <NavButton onClick={onMenuClick}>
-        <MenuOutlined className="icon" />
-        <ButtonLabel>菜单</ButtonLabel>
-      </NavButton>
-      
-      <Logo onClick={handleLogoClick}>镜瞳OVO</Logo>
-      
-      {isAuthenticated ? (
-        <NavButton onClick={handleLogout}>
-          <LogoutOutlined className="icon" />
-          <ButtonLabel>退出</ButtonLabel>
+    <div ref={navbarRef}>
+      <MobileTopNavbarContainer className="mobile-top-navbar">
+        <NavButton onClick={toggleDropdown}>
+          <MenuOutlined className="icon" />
+          <ButtonLabel>菜单</ButtonLabel>
         </NavButton>
-      ) : (
-        <div style={{ width: 60 }} /> // 占位符，保持布局平衡
-      )}
-    </MobileTopNavbarContainer>
+        
+        <Logo onClick={handleLogoClick}>镜瞳OVO</Logo>
+        
+        {isAuthenticated ? (
+          <NavButton onClick={handleLogout}>
+            <LogoutOutlined className="icon" />
+            <ButtonLabel>退出</ButtonLabel>
+          </NavButton>
+        ) : (
+          <div style={{ width: 60 }} /> // 占位符，保持布局平衡
+        )}
+      </MobileTopNavbarContainer>
+      
+      <AnimatePresence>
+        {dropdownVisible && <DropdownMenu onClose={closeDropdown} />}
+      </AnimatePresence>
+    </div>
   );
 };
 

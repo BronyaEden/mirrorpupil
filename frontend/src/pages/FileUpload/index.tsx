@@ -74,7 +74,7 @@ const UploadContainer = styled.div`
 `;
 
 const StyledCard = styled(Card)`
-  background: ${props => props.theme.colors.background.secondary};
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%);
   border: 1px solid ${props => props.theme.colors.neutral.gray400};
   border-radius: ${props => props.theme.borderRadius.lg};
   
@@ -133,7 +133,7 @@ const TagInput = styled.div`
   border: 1px solid ${props => props.theme.colors.neutral.gray400};
   border-radius: ${props => props.theme.borderRadius.md};
   padding: ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.background.secondary};
+  background: #ffffff;
   min-height: 40px;
   display: flex;
   flex-wrap: wrap;
@@ -170,7 +170,7 @@ const TagInputField = styled(Input)`
 `;
 
 const StyledFormItemLabel = styled.span`
-  color: #00D9FF !important;
+  color: #212529 !important;
   font-size: 18px !important;
   font-weight: 500 !important;
   
@@ -181,7 +181,7 @@ const StyledFormItemLabel = styled.span`
 
 const StyledInput = styled(Input)`
   &::placeholder {
-    color: #00D9FF !important;
+    color: #6c757d !important;
     font-size: 16px !important;
   }
   
@@ -196,7 +196,7 @@ const StyledInput = styled(Input)`
 
 const StyledTextArea = styled(TextArea)`
   &::placeholder {
-    color: #00D9FF !important;
+    color: #6c757d !important;
     font-size: 16px !important;
   }
   
@@ -211,7 +211,7 @@ const StyledTextArea = styled(TextArea)`
 
 const StyledSelect = styled(Select)`
   .ant-select-selection-placeholder {
-    color: #888888 !important;
+    color: #6c757d !important;
     font-size: 16px !important;
   }
   

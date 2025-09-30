@@ -166,15 +166,24 @@ class FileService {
     
     const [files, total] = await Promise.all([
       File.find(query)
-        .populate('uploaderId', 'username avatar')
+        .populate({ path: 'uploaderId', select: 'username avatar' })
         .sort(sortConfig)
         .skip(skip)
         .limit(limit),
       File.countDocuments(query)
     ]);
     
+    // 转换文件数据，将uploaderId重命名为uploader以匹配前端期望的数据结构
+    const transformedFiles = files.map(file => {
+      const fileObj = file.toObject();
+      // 将uploaderId字段重命名为uploader
+      fileObj.uploader = fileObj.uploaderId;
+      delete fileObj.uploaderId;
+      return fileObj;
+    });
+    
     return {
-      files,
+      files: transformedFiles,
       pagination: {
         page,
         limit,
@@ -202,7 +211,12 @@ class FileService {
     // 增加查看次数
     await file.incrementView();
     
-    return file;
+    // 转换文件数据，将uploaderId重命名为uploader以匹配前端期望的数据结构
+    const fileObj = file.toObject();
+    fileObj.uploader = fileObj.uploaderId;
+    delete fileObj.uploaderId;
+    
+    return fileObj;
   }
 
   // 通过分享链接获取文件
@@ -219,37 +233,60 @@ class FileService {
       throw new Error('分享链接已过期');
     }
     
-    return file;
+    // 转换文件数据，将uploaderId重命名为uploader以匹配前端期望的数据结构
+    const fileObj = file.toObject();
+    fileObj.uploader = fileObj.uploaderId;
+    delete fileObj.uploaderId;
+    
+    return fileObj;
   }
 
   // 下载文件
   async downloadFile(fileId, userId = null) {
-    const file = await this.getFileById(fileId, userId);
+    // 注意：这里需要获取原始的Mongoose文档对象，而不是转换后的普通对象
+    const fileDoc = await File.findById(fileId)
+      .populate('uploaderId', 'username avatar bio')
+      .populate('likes.user', 'username avatar');
+    
+    if (!fileDoc || !fileDoc.isActive) {
+      throw new Error('文件不存在');
+    }
+    
+    // 权限检查
+    if (!this.canAccessFile(fileDoc, userId)) {
+      throw new Error('无权访问此文件');
+    }
     
     // 增加下载次数
-    await file.incrementDownload();
+    await fileDoc.incrementDownload();
     
     // 更新用户文件统计
-    await this.updateUserFileStats(file.uploaderId);
+    await this.updateUserFileStats(fileDoc.uploaderId);
+    
+    // 转换文件数据，将uploaderId重命名为uploader以匹配前端期望的数据结构
+    const fileObj = fileDoc.toObject();
+    fileObj.uploader = fileObj.uploaderId;
+    delete fileObj.uploaderId;
     
     // 返回文件数据而不是文件路径
     return {
-      file,
-      fileData: file.data, // 文件数据来自数据库
-      filename: file.originalName
+      file: fileObj,
+      fileData: fileDoc.data, // 文件数据来自数据库
+      filename: fileDoc.originalName
     };
   }
 
   // 获取缩略图
   async getThumbnail(fileId) {
-    const file = await File.findById(fileId);
+    // 注意：这里需要获取原始的Mongoose文档对象，而不是转换后的普通对象
+    const fileDoc = await File.findById(fileId);
     
-    if (!file || !file.isActive) {
+    if (!fileDoc || !fileDoc.isActive) {
       throw new Error('文件不存在');
     }
     
     // 如果是图片文件但没有缩略图数据，返回一个默认的占位符图片
-    if (file.fileType === 'image' && !file.thumbnailData) {
+    if (fileDoc.fileType === 'image' && !fileDoc.thumbnailData) {
       // 生成一个简单的占位符图片
       const placeholder = Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
@@ -262,7 +299,7 @@ class FileService {
     }
     
     // 如果不是图片文件，也返回占位符
-    if (file.fileType !== 'image') {
+    if (fileDoc.fileType !== 'image') {
       const placeholder = Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
         'base64'
@@ -274,31 +311,32 @@ class FileService {
     }
     
     return {
-      data: file.thumbnailData,
-      mimeType: file.mimeType
+      data: fileDoc.thumbnailData,
+      mimeType: fileDoc.mimeType
     };
   }
 
   // 删除文件
   async deleteFile(fileId, userId) {
-    const file = await File.findById(fileId);
+    // 注意：这里需要获取完整的Mongoose文档对象以使用其方法
+    const fileDoc = await File.findById(fileId);
     
-    if (!file || !file.isActive) {
+    if (!fileDoc || !fileDoc.isActive) {
       throw new Error('文件不存在');
     }
     
     // 权限检查：只有文件上传者可以删除
-    if (file.uploaderId.toString() !== userId) {
+    if (fileDoc.uploaderId.toString() !== userId) {
       throw new Error('无权删除此文件');
     }
     
     // 保存上传者ID用于后续更新统计
-    const uploaderId = file.uploaderId;
+    const uploaderId = fileDoc.uploaderId;
     
     // 软删除 - 设置deletedAt时间
-    file.isActive = false;
-    file.deletedAt = new Date();
-    await file.save();
+    fileDoc.isActive = false;
+    fileDoc.deletedAt = new Date();
+    await fileDoc.save();
     
     // 更新用户文件统计
     await this.updateUserFileStats(uploaderId);
@@ -308,19 +346,20 @@ class FileService {
 
   // 恢复被软删除的文件
   async restoreFile(fileId) {
-    const file = await File.findById(fileId);
+    // 注意：这里需要获取完整的Mongoose文档对象以使用其方法
+    const fileDoc = await File.findById(fileId);
     
-    if (!file) {
+    if (!fileDoc) {
       throw new Error('文件不存在');
     }
     
     // 检查文件是否已被删除
-    if (file.isActive) {
+    if (fileDoc.isActive) {
       throw new Error('文件未被删除');
     }
     
     // 检查是否超过12小时恢复期限
-    const deletedTime = new Date(file.deletedAt);
+    const deletedTime = new Date(fileDoc.deletedAt);
     const currentTime = new Date();
     const hoursSinceDeletion = (currentTime - deletedTime) / (1000 * 60 * 60);
     
@@ -329,26 +368,27 @@ class FileService {
     }
     
     // 恢复文件
-    file.isActive = true;
-    file.deletedAt = null;
-    await file.save();
+    fileDoc.isActive = true;
+    fileDoc.deletedAt = null;
+    await fileDoc.save();
     
     // 更新用户文件统计
-    await this.updateUserFileStats(file.uploaderId);
+    await this.updateUserFileStats(fileDoc.uploaderId);
     
     return { message: '文件恢复成功' };
   }
 
   // 更新文件信息
   async updateFile(fileId, updateData, userId) {
-    const file = await File.findById(fileId);
+    // 注意：这里需要获取完整的Mongoose文档对象以使用其方法
+    const fileDoc = await File.findById(fileId);
     
-    if (!file || !file.isActive) {
+    if (!fileDoc || !fileDoc.isActive) {
       throw new Error('文件不存在');
     }
     
     // 权限检查
-    if (file.uploaderId.toString() !== userId) {
+    if (fileDoc.uploaderId.toString() !== userId) {
       throw new Error('无权修改此文件');
     }
     
@@ -365,32 +405,33 @@ class FileService {
     });
     
     // 如果访问级别改为链接分享，生成分享链接
-    if (updates.accessLevel === 'link' && !file.shareLink) {
+    if (updates.accessLevel === 'link' && !fileDoc.shareLink) {
       updates.shareLink = uuidv4();
     }
     
-    Object.assign(file, updates);
-    await file.save();
+    Object.assign(fileDoc, updates);
+    await fileDoc.save();
     
-    return file;
+    return fileDoc;
   }
 
   // 切换点赞状态
   async toggleLike(fileId, userId) {
-    const file = await File.findById(fileId);
+    // 注意：这里需要获取完整的Mongoose文档对象以使用其方法
+    const fileDoc = await File.findById(fileId);
     
-    if (!file || !file.isActive) {
+    if (!fileDoc || !fileDoc.isActive) {
       throw new Error('文件不存在');
     }
     
-    await file.toggleLike(userId);
+    await fileDoc.toggleLike(userId);
     
     // 更新用户文件统计
-    await this.updateUserFileStats(file.uploaderId);
+    await this.updateUserFileStats(fileDoc.uploaderId);
     
     return {
-      isLiked: file.isLikedBy(userId),
-      likeCount: file.likeCount
+      isLiked: fileDoc.isLikedBy(userId),
+      likeCount: fileDoc.likeCount
     };
   }
 

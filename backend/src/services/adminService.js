@@ -249,15 +249,24 @@ class AdminService {
     const skip = (page - 1) * limit;
     
     const files = await File.find(query)
-      .populate('uploaderId', 'username email')
+      .populate({ path: 'uploaderId', select: 'username email' })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
     const total = await File.countDocuments(query);
+    
+    // 转换文件数据，将uploaderId重命名为uploader以匹配前端期望的数据结构
+    const transformedFiles = files.map(file => {
+      const fileObj = file.toObject();
+      // 将uploaderId字段重命名为uploader
+      fileObj.uploader = fileObj.uploaderId;
+      delete fileObj.uploaderId;
+      return fileObj;
+    });
 
     return {
-      files,
+      files: transformedFiles,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
