@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Card, Tag, Avatar, Space, Button, Dropdown, Typography, Image } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Card, Tag, Avatar, Space, Button, Dropdown, Typography, Image, Spin } from 'antd';
 import { 
   DownloadOutlined, 
   EyeOutlined, 
@@ -19,6 +19,7 @@ import 'dayjs/locale/zh-cn';
 import { useNavigate } from 'react-router-dom';
 import { useViewport } from '../../hooks/useResponsive';
 import { mediaQuery } from '../../styles/responsive';
+import api from '../../utils/api';
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime);
@@ -365,6 +366,34 @@ const FileCard: React.FC<FileCardProps> = ({
   const navigate = useNavigate();
   const { isMobile } = useViewport();
   const cardRef = useRef<HTMLDivElement>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState<boolean>(true);
+
+  // 获取缩略图URL
+  useEffect(() => {
+    const fetchThumbnail = async () => {
+      if (file.fileType === 'image') {
+        try {
+          setIsLoadingThumbnail(true);
+          // 延迟加载缩略图，优先显示基础信息
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // 构建缩略图URL
+          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+          setThumbnailUrl(`${baseUrl}/files/${file._id}/thumbnail`);
+        } catch (error) {
+          console.error('获取缩略图失败:', error);
+          setThumbnailUrl(null);
+        } finally {
+          setIsLoadingThumbnail(false);
+        }
+      } else {
+        setIsLoadingThumbnail(false);
+      }
+    };
+
+    fetchThumbnail();
+  }, [file._id, file.fileType]);
 
   const getFileTypeIcon = (fileType: string) => {
     const icons = {
@@ -441,14 +470,26 @@ const FileCard: React.FC<FileCardProps> = ({
         size="small"
       >
         <FilePreview fileType={file.fileType}>
-          {file.fileType === 'image' ? (
+          {file.fileType === 'image' && thumbnailUrl ? (
             // 使用API获取缩略图
             <Image
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/${file._id}/thumbnail`}
+              src={thumbnailUrl}
               alt={file.displayName}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               preview={false}
               fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0iIzk5OSI+SW1hZ2U8L3RleHQ+PC9zdmc+"
+              placeholder={
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(241, 243, 245, 0.65) 0%, rgba(233, 236, 239, 0.65) 100%)'
+                }}>
+                  <Spin size="small" />
+                </div>
+              }
             />
           ) : (
             <FileTypeIcon fileType={file.fileType}>

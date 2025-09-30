@@ -3,7 +3,7 @@ import axios from 'axios';
 // 创建标准API axios实例
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  timeout: 30000, // 增加到30秒
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,8 +12,17 @@ const api = axios.create({
 // 创建用于文件下载的axios实例
 const fileApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 30000,
+  timeout: 60000, // 增加到60秒
   responseType: 'blob', // 重要：设置响应类型为blob以处理二进制数据
+});
+
+// 创建用于获取基础文件信息的axios实例
+const basicApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  timeout: 15000, // 基础信息请求超时时间
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // 请求拦截器
@@ -25,6 +34,20 @@ api.interceptors.request.use(
       console.log('API Request - Adding Authorization header:', config.url, token.substring(0, 20) + '...');
     } else {
       console.log('API Request - No token found for:', config.url);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 基础API请求拦截器
+basicApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -97,6 +120,17 @@ api.interceptors.response.use(
   }
 );
 
+// 基础API响应拦截器
+basicApi.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('Basic API Response Error:', error.response?.status, error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
 // 文件API响应拦截器
 fileApi.interceptors.response.use(
   (response) => {
@@ -108,5 +142,5 @@ fileApi.interceptors.response.use(
   }
 );
 
-export { fileApi };
+export { fileApi, basicApi };
 export default api;

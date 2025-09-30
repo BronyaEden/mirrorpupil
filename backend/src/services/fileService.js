@@ -114,7 +114,8 @@ class FileService {
       sortBy = 'createdAt',
       sortOrder = 'desc',
       searchTerm,
-      userId // 当前用户ID，用于权限判断
+      userId, // 当前用户ID，用于权限判断
+      basicInfoOnly = false // 是否只获取基础信息
     } = options;
 
     const skip = (page - 1) * limit;
@@ -164,8 +165,19 @@ class FileService {
     const sortConfig = {};
     sortConfig[sortBy] = sortOrder === 'asc' ? 1 : -1;
     
+    // 根据是否只需要基础信息来决定查询的字段
+    let selectFields = '';
+    if (basicInfoOnly) {
+      // 基础信息字段（不包含大字段如data和thumbnailData）
+      selectFields = 'filename originalName displayName description fileType mimeType fileSize fileUrl thumbnailUrl uploaderId tags category downloadCount viewCount likeCount isPublic accessLevel createdAt updatedAt';
+    } else {
+      // 完整字段信息
+      selectFields = 'filename originalName displayName description fileType mimeType fileSize fileUrl thumbnailUrl uploaderId tags category downloadCount viewCount likeCount isPublic accessLevel createdAt updatedAt data thumbnailData';
+    }
+    
     const [files, total] = await Promise.all([
       File.find(query)
+        .select(selectFields)
         .populate({ path: 'uploaderId', select: 'username avatar' })
         .sort(sortConfig)
         .skip(skip)

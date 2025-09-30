@@ -78,6 +78,37 @@ class FileController {
     }
   }
 
+  // 获取基础文件列表（仅包含基本信息，不包含大字段如data和thumbnailData）
+  async getBasicFiles(req, res) {
+    try {
+      const options = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 20,
+        fileType: req.query.fileType,
+        category: req.query.category,
+        tags: req.query.tags ? req.query.tags.split(',') : undefined,
+        uploaderId: req.query.uploaderId,
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'desc',
+        searchTerm: req.query.search,
+        userId: req.user?.userId,
+        basicInfoOnly: true // 标记只需要基础信息
+      };
+
+      const result = await FileService.getFiles(options);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   // 获取文件详情
   async getFileById(req, res) {
     try {

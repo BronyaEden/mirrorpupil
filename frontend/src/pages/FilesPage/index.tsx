@@ -16,7 +16,7 @@ import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import FileCard from '../../components/FileCard';
-import api from '../../utils/api';
+import api, { basicApi } from '../../utils/api';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -156,7 +156,7 @@ const FilesPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('createdAt');
 
   useEffect(() => {
-    const fetchFiles = async () => {
+    const fetchBasicFiles = async () => {
       setLoading(true);
       try {
         const params: any = {
@@ -174,9 +174,8 @@ const FilesPage: React.FC = () => {
           params.fileType = fileType;
         }
         
-        const response = await api.get('/files', { params });
-        
-
+        // 先获取基础文件信息（快速加载）
+        const response = await basicApi.get('/files/basic', { params });
         
         if (response.data.success) {
           setFiles(response.data.data.files);
@@ -188,12 +187,21 @@ const FilesPage: React.FC = () => {
         setLoading(false);
       } catch (error: any) {
         console.error('获取文件列表失败:', error);
-        message.error('获取文件列表失败');
+        // 提供更具体的错误信息
+        if (error.code === 'ECONNABORTED') {
+          message.error('请求超时，请检查网络连接或稍后重试');
+        } else if (error.response?.status === 404) {
+          message.error('请求的资源不存在');
+        } else if (error.response?.status === 500) {
+          message.error('服务器内部错误，请稍后重试');
+        } else {
+          message.error('获取文件列表失败，请检查网络连接');
+        }
         setLoading(false);
       }
     };
 
-    fetchFiles();
+    fetchBasicFiles();
   }, [currentPage, searchTerm, fileType, sortBy]);
 
   const handleSearch = () => {
@@ -401,7 +409,7 @@ const FilesPage: React.FC = () => {
         
         {loading ? (
           <div style={{ textAlign: 'center', padding: '100px 0' }}>
-            <Spin size="large" tip="加载中..." />
+            <Spin size="large" tip="加载中...请稍候" />
           </div>
         ) : files.length > 0 ? (
           <>
@@ -425,6 +433,7 @@ const FilesPage: React.FC = () => {
                 pageSize={12}
                 onChange={setCurrentPage}
                 showSizeChanger={false}
+                showQuickJumper
               />
             </div>
           </>

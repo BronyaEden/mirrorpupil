@@ -92,6 +92,13 @@ router.post('/upload',
   FileController.uploadFile
 );
 
+// 获取基础文件列表（仅包含基本信息）
+router.get('/basic',
+  optionalAuth,
+  paginationValidation,
+  FileController.getBasicFiles
+);
+
 // 获取文件列表（公开接口，支持可选认证）
 router.get('/',
   optionalAuth,
