@@ -14,7 +14,7 @@ import {
   Alert,
   Timeline,
   Badge,
-  Spin // 添加Spin组件的导入
+  Spin
 } from 'antd';
 import {
   CloudServerOutlined,
@@ -50,6 +50,15 @@ const AdminContainer = styled.div`
   padding: 24px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const StatsCard = styled(Card)`
@@ -66,16 +75,105 @@ const StatsCard = styled(Card)`
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
   }
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    
+    .ant-card-body {
+      padding: 16px 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    
+    .ant-card-body {
+      padding: 12px 8px;
+    }
+  }
 `;
 
 const StatusTag = styled(Tag)`
   border-radius: 12px;
   padding: 2px 8px;
   font-weight: 500;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 4px;
+    font-size: 11px;
+  }
 `;
 
 const LogCard = styled(Card)`
   margin-top: 24px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-top: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-top: 12px;
+  }
+`;
+
+// 移动端统计卡片优化
+const MobileStatsCard = styled(Card)`
+  margin-bottom: 12px;
+  
+  .ant-card-body {
+    padding: 12px 8px;
+  }
+  
+  .ant-typography {
+    font-size: 12px;
+  }
+  
+  .stats-value {
+    font-size: 14px !important;
+  }
+`;
+
+// 移动端表格优化
+const MobileTable = styled(Table)`
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 8px 4px;
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 6px 3px;
+      font-size: 11px;
+    }
+  }
+`;
+
+// 移动端进度条优化
+const MobileProgress = styled(Progress)`
+  @media (max-width: 768px) {
+    .ant-progress-text {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-progress-text {
+      font-size: 11px;
+    }
+  }
 `;
 
 // 接口定义
@@ -146,6 +244,18 @@ const AdminSystem: React.FC = () => {
     total: 0,
     pages: 0
   });
+  
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 加载系统状态
   useEffect(() => {
@@ -245,7 +355,16 @@ const AdminSystem: React.FC = () => {
       ? statusMap[status as keyof typeof statusMap] 
       : { color: 'default', text: status || '未知' };
       
-    return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
+    return (
+      <Tag 
+        color={statusInfo.color}
+        style={{ 
+          fontSize: isMobile ? '11px' : '12px' 
+        }}
+      >
+        {statusInfo.text}
+      </Tag>
+    );
   };
 
   // 获取日志级别标签
@@ -262,7 +381,67 @@ const AdminSystem: React.FC = () => {
       ? levelMap[level as keyof typeof levelMap] 
       : { color: 'default', icon: null };
       
-    return <Tag color={levelInfo.color} icon={levelInfo.icon}>{level || 'unknown'}</Tag>;
+    return (
+      <Tag 
+        color={levelInfo.color} 
+        icon={levelInfo.icon}
+        style={{ 
+          fontSize: isMobile ? '11px' : '12px' 
+        }}
+      >
+        {level || 'unknown'}
+      </Tag>
+    );
+  };
+
+  // 系统日志表格列定义 - 移动端优化
+  const getLogColumns = (isMobile: boolean) => {
+    const columns = [
+      {
+        title: '时间',
+        dataIndex: 'timestamp',
+        key: 'timestamp',
+        render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
+      },
+      {
+        title: '级别',
+        dataIndex: 'level',
+        key: 'level',
+        render: (level: string) => getLogLevelTag(level)
+      },
+      {
+        title: '消息',
+        dataIndex: 'message',
+        key: 'message',
+        render: (message: string) => (
+          <Typography.Text 
+            ellipsis={{ tooltip: message }} 
+            style={{ 
+              maxWidth: 150,
+              fontSize: '12px'
+            }}
+          >
+            {message}
+          </Typography.Text>
+        )
+      },
+      {
+        title: 'IP地址',
+        dataIndex: 'ip',
+        key: 'ip'
+      }
+    ];
+    
+    // 移动端只显示关键列
+    if (isMobile) {
+      return columns.filter(col => 
+        col.key === 'timestamp' || 
+        col.key === 'level' || 
+        col.key === 'message'
+      );
+    }
+    
+    return columns;
   };
 
   return (
@@ -272,7 +451,14 @@ const AdminSystem: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography.Title level={2} style={{ marginBottom: 24, color: '#1a365d' }}>
+        <Typography.Title 
+          level={isMobile ? 4 : 2} 
+          style={{ 
+            marginBottom: isMobile ? 16 : 24, 
+            color: '#1a365d',
+            fontSize: isMobile ? '18px' : '30px'
+          }}
+        >
           <MonitorOutlined style={{ marginRight: 8 }} />
           系统监控
         </Typography.Title>
@@ -283,108 +469,197 @@ const AdminSystem: React.FC = () => {
             description={error} 
             type="error" 
             showIcon 
-            style={{ marginBottom: 24 }}
+            style={{ 
+              marginBottom: isMobile ? 16 : 24,
+              fontSize: isMobile ? '12px' : '14px'
+            }}
           />
         )}
 
         {loading && (
           <div style={{ textAlign: 'center', padding: '24px' }}>
             <Spin size="large" />
-            <div style={{ marginTop: 16 }}>正在加载系统状态...</div>
+            <div style={{ 
+              marginTop: 16,
+              fontSize: isMobile ? '14px' : '16px'
+            }}>
+              正在加载系统状态...
+            </div>
           </div>
         )}
 
         {!loading && (
           <>
-            {/* 系统状态概览 */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-              <Col xs={24} sm={12} lg={8}>
-                <StatsCard>
-                  <Space>
-                    <CloudServerOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-                    <div>
-                      <Typography.Text strong>服务器状态</Typography.Text>
-                      <div style={{ marginTop: 8 }}>
-                        {getStatusTag(systemStatus?.server?.status || 'unknown', 'server')}
+            {/* 系统状态概览 - 移动端优化 */}
+            {isMobile ? (
+              <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+                <Col span={12}>
+                  <MobileStatsCard>
+                    <Space>
+                      <CloudServerOutlined style={{ fontSize: '16px', color: '#1890ff' }} />
+                      <div>
+                        <Typography.Text strong style={{ fontSize: '12px' }}>服务器</Typography.Text>
+                        <div style={{ marginTop: 4 }}>
+                          {getStatusTag(systemStatus?.server?.status || 'unknown', 'server')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '10px' }}>
+                          运行: {formatUptime(systemStatus?.server?.uptime || 0)}
+                        </Typography.Text>
                       </div>
-                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                        运行时间: {formatUptime(systemStatus?.server?.uptime || 0)}
-                      </Typography.Text>
-                    </div>
-                  </Space>
-                </StatsCard>
-              </Col>
-              <Col xs={24} sm={12} lg={8}>
-                <StatsCard>
-                  <Space>
-                    <DatabaseOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
-                    <div>
-                      <Typography.Text strong>数据库状态</Typography.Text>
-                      <div style={{ marginTop: 8 }}>
-                        {getStatusTag(systemStatus?.database?.status || 'unknown', 'database')}
+                    </Space>
+                  </MobileStatsCard>
+                </Col>
+                <Col span={12}>
+                  <MobileStatsCard>
+                    <Space>
+                      <DatabaseOutlined style={{ fontSize: '16px', color: '#52c41a' }} />
+                      <div>
+                        <Typography.Text strong style={{ fontSize: '12px' }}>数据库</Typography.Text>
+                        <div style={{ marginTop: 4 }}>
+                          {getStatusTag(systemStatus?.database?.status || 'unknown', 'database')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '10px' }}>
+                          连接: {systemStatus?.database?.connections || 0}
+                        </Typography.Text>
                       </div>
-                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                        连接数: {systemStatus?.database?.connections || 0}
-                      </Typography.Text>
-                    </div>
-                  </Space>
-                </StatsCard>
-              </Col>
-              <Col xs={24} sm={12} lg={8}>
-                <StatsCard>
-                  <Space>
-                    <WifiOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
-                    <div>
-                      <Typography.Text strong>缓存状态</Typography.Text>
-                      <div style={{ marginTop: 8 }}>
-                        {getStatusTag(systemStatus?.redis?.status || 'unknown', 'redis')}
+                    </Space>
+                  </MobileStatsCard>
+                </Col>
+                <Col span={12}>
+                  <MobileStatsCard>
+                    <Space>
+                      <WifiOutlined style={{ fontSize: '16px', color: '#722ed1' }} />
+                      <div>
+                        <Typography.Text strong style={{ fontSize: '12px' }}>缓存</Typography.Text>
+                        <div style={{ marginTop: 4 }}>
+                          {getStatusTag(systemStatus?.redis?.status || 'unknown', 'redis')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '10px' }}>
+                          连接: {systemStatus?.redis?.connections || 0}
+                        </Typography.Text>
                       </div>
-                      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                        连接数: {systemStatus?.redis?.connections || 0}
-                      </Typography.Text>
-                    </div>
-                  </Space>
-                </StatsCard>
-              </Col>
-            </Row>
+                    </Space>
+                  </MobileStatsCard>
+                </Col>
+              </Row>
+            ) : (
+              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} lg={8}>
+                  <StatsCard>
+                    <Space>
+                      <CloudServerOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                      <div>
+                        <Typography.Text strong>服务器状态</Typography.Text>
+                        <div style={{ marginTop: 8 }}>
+                          {getStatusTag(systemStatus?.server?.status || 'unknown', 'server')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                          运行时间: {formatUptime(systemStatus?.server?.uptime || 0)}
+                        </Typography.Text>
+                      </div>
+                    </Space>
+                  </StatsCard>
+                </Col>
+                <Col xs={24} sm={12} lg={8}>
+                  <StatsCard>
+                    <Space>
+                      <DatabaseOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                      <div>
+                        <Typography.Text strong>数据库状态</Typography.Text>
+                        <div style={{ marginTop: 8 }}>
+                          {getStatusTag(systemStatus?.database?.status || 'unknown', 'database')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                          连接数: {systemStatus?.database?.connections || 0}
+                        </Typography.Text>
+                      </div>
+                    </Space>
+                  </StatsCard>
+                </Col>
+                <Col xs={24} sm={12} lg={8}>
+                  <StatsCard>
+                    <Space>
+                      <WifiOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
+                      <div>
+                        <Typography.Text strong>缓存状态</Typography.Text>
+                        <div style={{ marginTop: 8 }}>
+                          {getStatusTag(systemStatus?.redis?.status || 'unknown', 'redis')}
+                        </div>
+                        <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                          连接数: {systemStatus?.redis?.connections || 0}
+                        </Typography.Text>
+                      </div>
+                    </Space>
+                  </StatsCard>
+                </Col>
+              </Row>
+            )}
 
-            {/* 内存和CPU使用情况 */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            {/* 内存和CPU使用情况 - 移动端优化 */}
+            <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 16]} style={{ marginBottom: isMobile ? 16 : 24 }}>
               <Col xs={24} lg={12}>
-                <StatsCard title="内存使用情况">
+                <StatsCard 
+                  title={
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px' 
+                    }}>
+                      内存使用情况
+                    </span>
+                  }
+                >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <div>
-                      <Typography.Text>堆内存使用: {formatMemory(systemStatus?.server?.memory?.heapUsed || 0)} / {formatMemory(systemStatus?.server?.memory?.heapTotal || 0)}</Typography.Text>
-                      <Progress 
+                      <Typography.Text style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                        堆内存使用: {formatMemory(systemStatus?.server?.memory?.heapUsed || 0)} / {formatMemory(systemStatus?.server?.memory?.heapTotal || 0)}
+                      </Typography.Text>
+                      <MobileProgress 
                         percent={Math.round(((systemStatus?.server?.memory?.heapUsed || 0) / (systemStatus?.server?.memory?.heapTotal || 1)) * 100)} 
                         status="normal" 
+                        size={isMobile ? "small" : "default"}
                       />
                     </div>
                     <div>
-                      <Typography.Text>总内存使用: {formatMemory(systemStatus?.server?.memory?.rss || 0)}</Typography.Text>
-                      <Progress 
+                      <Typography.Text style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                        总内存使用: {formatMemory(systemStatus?.server?.memory?.rss || 0)}
+                      </Typography.Text>
+                      <MobileProgress 
                         percent={Math.round(((systemStatus?.server?.memory?.rss || 0) / ((systemStatus?.server?.memory?.heapTotal || 1) * 2)) * 100)} 
                         status="normal" 
+                        size={isMobile ? "small" : "default"}
                       />
                     </div>
                   </Space>
                 </StatsCard>
               </Col>
               <Col xs={24} lg={12}>
-                <StatsCard title="CPU使用情况">
+                <StatsCard 
+                  title={
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px' 
+                    }}>
+                      CPU使用情况
+                    </span>
+                  }
+                >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <div>
-                      <Typography.Text>用户CPU时间: {(systemStatus?.server?.cpu?.user || 0).toFixed(2)}</Typography.Text>
-                      <Progress 
+                      <Typography.Text style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                        用户CPU时间: {(systemStatus?.server?.cpu?.user || 0).toFixed(2)}
+                      </Typography.Text>
+                      <MobileProgress 
                         percent={Math.min(100, Math.round((systemStatus?.server?.cpu?.user || 0) / 1000000))} 
                         status="active" 
+                        size={isMobile ? "small" : "default"}
                       />
                     </div>
                     <div>
-                      <Typography.Text>系统CPU时间: {(systemStatus?.server?.cpu?.system || 0).toFixed(2)}</Typography.Text>
-                      <Progress 
+                      <Typography.Text style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                        系统CPU时间: {(systemStatus?.server?.cpu?.system || 0).toFixed(2)}
+                      </Typography.Text>
+                      <MobileProgress 
                         percent={Math.min(100, Math.round((systemStatus?.server?.cpu?.system || 0) / 1000000))} 
                         status="active" 
+                        size={isMobile ? "small" : "default"}
                       />
                     </div>
                   </Space>
@@ -392,50 +667,29 @@ const AdminSystem: React.FC = () => {
               </Col>
             </Row>
 
-            {/* 系统日志 */}
+            {/* 系统日志 - 移动端优化 */}
             <LogCard 
-              title="系统日志" 
+              title={
+                <span style={{ 
+                  fontSize: isMobile ? '14px' : '16px' 
+                }}>
+                  系统日志
+                </span>
+              }
               extra={
                 <Button 
                   icon={<ReloadOutlined />} 
                   onClick={() => loadSystemLogs(pagination.page)}
                   loading={loading}
+                  size={isMobile ? "small" : "middle"}
                 >
                   刷新
                 </Button>
               }
             >
-              <Table
+              <MobileTable
                 dataSource={logs}
-                columns={[
-                  {
-                    title: '时间',
-                    dataIndex: 'timestamp',
-                    key: 'timestamp',
-                    render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
-                  },
-                  {
-                    title: '级别',
-                    dataIndex: 'level',
-                    key: 'level',
-                    render: (level: string) => getLogLevelTag(level)
-                  },
-                  {
-                    title: '消息',
-                    dataIndex: 'message',
-                    key: 'message',
-                    render: (message: string) => (
-                      <Typography.Text ellipsis={{ tooltip: message }} style={{ maxWidth: 300 }}>
-                        {message}
-                      </Typography.Text>
-                    )
-                  },
-                  {
-                    title: 'IP地址',
-                    dataIndex: 'ip',
-                    key: 'ip'
-                  }
-                ]}
+                columns={getLogColumns(isMobile)}
                 rowKey={(record) => record.timestamp + record.message}
                 pagination={{
                   current: pagination.page,
@@ -444,9 +698,11 @@ const AdminSystem: React.FC = () => {
                   showSizeChanger: true,
                   showQuickJumper: true,
                   showTotal: (total) => `共 ${total} 条记录`,
-                  onChange: (page) => loadSystemLogs(page)
+                  onChange: (page) => loadSystemLogs(page),
+                  size: isMobile ? "small" : "default"
                 }}
-                scroll={{ x: 800 }}
+                size={isMobile ? "small" : "middle"}
+                scroll={isMobile ? undefined : { x: 800 }}
               />
             </LogCard>
           </>

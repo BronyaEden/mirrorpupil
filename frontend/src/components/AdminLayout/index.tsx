@@ -10,7 +10,8 @@ import {
   Button,
   Badge,
   Tooltip,
-  Alert
+  Alert,
+  Drawer
 } from 'antd';
 import {
   DashboardOutlined,
@@ -27,7 +28,8 @@ import {
   CloudServerOutlined,
   DatabaseOutlined,
   TeamOutlined,
-  SafetyOutlined
+  SafetyOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,6 +39,15 @@ const { Header, Sider, Content } = Layout;
 // 样式组件
 const AdminLayout = styled(Layout)`
   min-height: 100vh;
+  
+  // 移动端适配样式
+  @media (max-width: 768px) {
+    // 当在移动端后台访问时，添加类名以隐藏前台导航栏
+    &.mobile-admin-view {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
 `;
 
 const AdminSider = styled(Sider)`
@@ -74,6 +85,34 @@ const AdminSider = styled(Sider)`
       }
     }
   }
+  
+  // 移动端侧边栏优化
+  @media (max-width: 768px) {
+    position: fixed;
+    height: calc(100vh - 56px); // 减去顶部导航栏高度
+    top: 56px;
+    z-index: 1000;
+  }
+`;
+
+// 移动端抽屉式侧边栏
+const MobileDrawer = styled(Drawer)`
+  .ant-drawer-content-wrapper {
+    max-width: 80vw;
+  }
+  
+  .ant-drawer-content {
+    background: linear-gradient(180deg, #1a365d 0%, #2d3748 100%);
+  }
+  
+  .ant-drawer-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .ant-drawer-body {
+    padding: 0;
+  }
 `;
 
 const AdminHeader = styled(Header)`
@@ -86,6 +125,14 @@ const AdminHeader = styled(Header)`
   position: sticky;
   top: 0;
   z-index: 10;
+  
+  // 移动端头部优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 0 12px;
+    height: 56px;
+    position: fixed;
+    width: 100%;
+  }
 `;
 
 const LogoSection = styled.div`
@@ -97,17 +144,51 @@ const LogoSection = styled.div`
   font-size: 16px;
   padding: 16px;
   margin-bottom: 8px;
+  
+  // 移动端logo优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 12px 8px;
+    font-size: 14px;
+    gap: 6px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    padding: 10px 6px;
+    font-size: 13px;
+    gap: 4px;
+  }
 `;
 
 const UserSection = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
+  
+  // 移动端用户区域优化 - 更紧凑
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const NotificationBadge = styled(Badge)`
   .ant-badge-count {
     background: #ff4d4f;
+  }
+  
+  // 移动端通知徽章优化
+  @media (max-width: 768px) {
+    .ant-badge-count {
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      font-size: 10px;
+    }
   }
 `;
 
@@ -121,20 +202,52 @@ const UserInfoSection = styled.div`
   cursor: pointer;
   transition: all 0.3s ease;
   height: 36px;
-  max-width: 160px; // 减小最大宽度以适应导航栏
+  max-width: 160px;
+  
+  // 移动端用户信息优化 - 更紧凑
+  @media (max-width: 768px) {
+    max-width: 120px;
+    padding: 2px 4px;
+    gap: 5px;
+    height: 32px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    max-width: 100px;
+    padding: 2px 3px;
+    gap: 4px;
+    height: 28px;
+  }
 `;
 
 const UserAvatar = styled(Avatar)`
   border: 2px solid #667eea;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-weight: 600;
+  
+  // 移动端头像优化 - 更紧凑
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 10px;
+  }
 `;
 
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 1; // 允许收缩
+  flex-shrink: 1;
 `;
 
 const UserName = styled.div`
@@ -144,7 +257,17 @@ const UserName = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2; // 调整行高
+  line-height: 1.2;
+  
+  // 移动端用户名优化 - 更紧凑
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const UserRole = styled.div`
@@ -154,7 +277,17 @@ const UserRole = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2; // 调整行高
+  line-height: 1.2;
+  
+  // 移动端角色信息优化 - 更紧凑
+  @media (max-width: 768px) {
+    font-size: 9px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    font-size: 8px;
+  }
 `;
 
 const AdminContent = styled(Content)`
@@ -163,6 +296,20 @@ const AdminContent = styled(Content)`
   background: #f5f5f5;
   border-radius: 8px;
   overflow: hidden;
+  
+  // 移动端内容区域优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin: 12px;
+    margin-top: 80px; // 为固定头部留出空间
+    min-height: calc(100vh - 140px); // 减去头部和底部空间
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    margin: 8px;
+    margin-top: 72px;
+    min-height: calc(100vh - 132px);
+  }
 `;
 
 const StatusIndicator = styled.div`
@@ -171,6 +318,64 @@ const StatusIndicator = styled.div`
   border-left: 4px solid #52c41a;
   margin: 16px;
   border-radius: 4px;
+  
+  // 移动端状态指示器优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    margin: 12px 8px;
+    font-size: 12px;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    margin: 10px 6px;
+    font-size: 11px;
+  }
+`;
+
+const MobileMenuButton = styled(Button)`
+  @media (min-width: 769px) {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+  
+  // 小屏幕进一步优化
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+  }
+`;
+
+// 移动端页面标题优化
+const MobilePageTitle = styled(Typography.Title)`
+  @media (max-width: 768px) {
+    font-size: 16px !important;
+    margin: 0 !important;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 15px !important;
+  }
+`;
+
+// 移动端菜单项优化
+const MobileMenuItem = styled.div`
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 // 管理员路由守卫
@@ -223,9 +428,52 @@ const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const AdminLayoutComponent: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [notifications, setNotifications] = useState(3);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      return mobile;
+    };
+    
+    // 初始化检测
+    checkIsMobile();
+    
+    // 监听窗口大小变化
+    const handleResize = () => {
+      checkIsMobile();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // 清理事件监听器
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  // 移动端访问后台时隐藏前台导航栏
+  useEffect(() => {
+    if (isMobile) {
+      // 添加类名以隐藏前台导航栏
+      document.body.classList.add('hide-front-nav');
+    } else {
+      // 移除类名显示前台导航栏
+      document.body.classList.remove('hide-front-nav');
+    }
+    
+    // 组件卸载时清理
+    return () => {
+      document.body.classList.remove('hide-front-nav');
+    };
+  }, [isMobile]);
   
   // 获取管理员信息
   const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
@@ -277,6 +525,10 @@ const AdminLayoutComponent: React.FC = () => {
   // 处理菜单点击
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
+    // 移动端点击菜单后关闭抽屉
+    if (isMobile) {
+      setMobileDrawerVisible(false);
+    }
   };
 
   // 处理登出
@@ -309,61 +561,128 @@ const AdminLayoutComponent: React.FC = () => {
     },
   ];
 
+  // 移动端抽屉菜单标题
+  const drawerTitle = (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <SecurityScanOutlined style={{ fontSize: '20px', color: '#667eea' }} />
+        <span style={{ fontSize: '16px' }}>管理后台</span>
+      </div>
+      <Button 
+        type="text" 
+        icon={<CloseOutlined />} 
+        onClick={() => setMobileDrawerVisible(false)}
+        style={{ fontSize: '16px' }}
+      />
+    </div>
+  );
+
   return (
     <AdminGuard>
-      <AdminLayout>
-        <AdminSider 
-          trigger={null} 
-          collapsible 
-          collapsed={collapsed}
-          width={250}
-          collapsedWidth={80}
-        >
-          <LogoSection>
-            <SecurityScanOutlined style={{ fontSize: '24px', color: '#667eea' }} />
-            {!collapsed && (
-              <div>
-                <div style={{ fontSize: '16px' }}>管理后台</div>
-                <div style={{ fontSize: '12px', opacity: 0.7 }}>
-                  Admin Panel
+      <AdminLayout className={isMobile ? 'mobile-admin-view' : ''}>
+        {/* 移动端使用抽屉式菜单 */}
+        {isMobile ? (
+          <>
+            <MobileDrawer
+              title={drawerTitle}
+              placement="left"
+              closable={false}
+              onClose={() => setMobileDrawerVisible(false)}
+              open={mobileDrawerVisible}
+              width={250}
+            >
+              <LogoSection>
+                <SecurityScanOutlined style={{ fontSize: '20px', color: '#667eea' }} />
+                <div>
+                  <div style={{ fontSize: '14px' }}>管理后台</div>
+                  <div style={{ fontSize: '11px', opacity: 0.7 }}>
+                    Admin Panel
+                  </div>
                 </div>
-              </div>
-            )}
-          </LogoSection>
-          
-          {!collapsed && (
-            <StatusIndicator>
-              <Space>
-                <DatabaseOutlined style={{ color: '#52c41a' }} />
-                <Typography.Text style={{ color: '#52c41a', fontSize: '12px' }}>
-                  系统运行正常
-                </Typography.Text>
-              </Space>
-            </StatusIndicator>
-          )}
+              </LogoSection>
+              
+              <StatusIndicator>
+                <Space>
+                  <DatabaseOutlined style={{ color: '#52c41a', fontSize: '14px' }} />
+                  <Typography.Text style={{ color: '#52c41a', fontSize: '12px' }}>
+                    系统运行正常
+                  </Typography.Text>
+                </Space>
+              </StatusIndicator>
 
-          <Menu
-            theme="dark"
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            onClick={handleMenuClick}
-            style={{ marginTop: 16 }}
-          />
-        </AdminSider>
+              <Menu
+                theme="dark"
+                mode="inline"
+                selectedKeys={[location.pathname]}
+                items={menuItems}
+                onClick={handleMenuClick}
+                style={{ marginTop: 16 }}
+              />
+            </MobileDrawer>
+          </>
+        ) : (
+          <AdminSider 
+            trigger={null} 
+            collapsible 
+            collapsed={collapsed}
+            width={250}
+            collapsedWidth={80}
+          >
+            <LogoSection>
+              <SecurityScanOutlined style={{ fontSize: '24px', color: '#667eea' }} />
+              {!collapsed && (
+                <div>
+                  <div style={{ fontSize: '16px' }}>管理后台</div>
+                  <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                    Admin Panel
+                  </div>
+                </div>
+              )}
+            </LogoSection>
+            
+            {!collapsed && (
+              <StatusIndicator>
+                <Space>
+                  <DatabaseOutlined style={{ color: '#52c41a' }} />
+                  <Typography.Text style={{ color: '#52c41a', fontSize: '12px' }}>
+                    系统运行正常
+                  </Typography.Text>
+                </Space>
+              </StatusIndicator>
+            )}
+
+            <Menu
+              theme="dark"
+              mode="inline"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              onClick={handleMenuClick}
+              style={{ marginTop: 16 }}
+            />
+          </AdminSider>
+        )}
 
         <Layout>
           <AdminHeader>
             <Space>
-              <Button
-                type="text"
-                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                onClick={() => setCollapsed(!collapsed)}
-                style={{ fontSize: '16px', width: 48, height: 48 }}
-              />
-              <Typography.Title level={4} style={{ margin: 0, color: '#1a365d' }}>
+              {isMobile ? (
+                <MobileMenuButton
+                  type="text"
+                  icon={<MenuFoldOutlined />}
+                  onClick={() => setMobileDrawerVisible(true)}
+                  style={{ fontSize: '16px' }}
+                />
+              ) : (
+                <Button
+                  type="text"
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setCollapsed(!collapsed)}
+                  style={{ fontSize: '16px', width: 48, height: 48 }}
+                />
+              )}
+              <MobilePageTitle level={4} style={{ margin: 0, color: '#1a365d' }}>
                 {menuItems.find(item => item.key === location.pathname)?.label || '管理后台'}
-              </Typography.Title>
+              </MobilePageTitle>
             </Space>
 
             <UserSection>

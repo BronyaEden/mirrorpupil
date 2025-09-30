@@ -62,6 +62,15 @@ const AdminContainer = styled.div`
   padding: 24px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const StatsCard = styled(Card)`
@@ -78,26 +87,136 @@ const StatsCard = styled(Card)`
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
   }
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    
+    .ant-card-body {
+      padding: 16px 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    
+    .ant-card-body {
+      padding: 12px 8px;
+    }
+  }
 `;
 
 const ActionButton = styled(Button)`
   margin: 0 4px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin: 0 2px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 0 1px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
 `;
 
 const StatusTag = styled(Tag)`
   border-radius: 12px;
   padding: 2px 8px;
   font-weight: 500;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 4px;
+    font-size: 11px;
+  }
 `;
 
 const SearchCard = styled(Card)`
   margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const SecurityCard = styled(Card)`
   margin-bottom: 24px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
+`;
+
+// 移动端表格优化
+const MobileTable = styled(Table)`
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 8px 4px;
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 6px 3px;
+      font-size: 11px;
+    }
+  }
+`;
+
+// 移动端列表优化
+const MobileList = styled(List)`
+  @media (max-width: 768px) {
+    .ant-list-item {
+      padding: 8px 12px;
+    }
+    
+    .ant-list-item-meta-title {
+      font-size: 14px;
+    }
+    
+    .ant-list-item-meta-description {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-list-item {
+      padding: 6px 8px;
+    }
+    
+    .ant-list-item-meta-title {
+      font-size: 13px;
+    }
+    
+    .ant-list-item-meta-description {
+      font-size: 11px;
+    }
+  }
 `;
 
 // 接口定义
@@ -162,6 +281,18 @@ const AdminSecurity: React.FC = () => {
       type: 'boolean'
     }
   ]);
+  
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 加载安全日志
   useEffect(() => {
@@ -231,7 +362,17 @@ const AdminSecurity: React.FC = () => {
     };
     
     const levelInfo = levelMap[level as keyof typeof levelMap] || { color: 'default', icon: null };
-    return <Tag color={levelInfo.color} icon={levelInfo.icon}>{level}</Tag>;
+    return (
+      <Tag 
+        color={levelInfo.color} 
+        icon={levelInfo.icon}
+        style={{ 
+          fontSize: isMobile ? '11px' : '12px' 
+        }}
+      >
+        {level}
+      </Tag>
+    );
   };
 
   // 更新安全设置
@@ -242,6 +383,67 @@ const AdminSecurity: React.FC = () => {
     message.success('设置已更新');
   };
 
+  // 安全日志表格列定义 - 移动端优化
+  const getLogColumns = (isMobile: boolean) => {
+    const columns = [
+      {
+        title: '时间',
+        dataIndex: 'timestamp',
+        key: 'timestamp',
+        render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
+      },
+      {
+        title: '级别',
+        dataIndex: 'level',
+        key: 'level',
+        render: (level: string) => getLogLevelTag(level)
+      },
+      {
+        title: '用户',
+        dataIndex: 'username',
+        key: 'username',
+        render: (username: string) => username || '系统'
+      },
+      {
+        title: 'IP地址',
+        dataIndex: 'ip',
+        key: 'ip'
+      },
+      {
+        title: '操作',
+        dataIndex: 'action',
+        key: 'action'
+      },
+      {
+        title: '消息',
+        dataIndex: 'message',
+        key: 'message',
+        render: (message: string) => (
+          <Typography.Text 
+            ellipsis={{ tooltip: message }} 
+            style={{ 
+              maxWidth: 150,
+              fontSize: '12px'
+            }}
+          >
+            {message}
+          </Typography.Text>
+        )
+      }
+    ];
+    
+    // 移动端只显示关键列
+    if (isMobile) {
+      return columns.filter(col => 
+        col.key === 'timestamp' || 
+        col.key === 'level' || 
+        col.key === 'message'
+      );
+    }
+    
+    return columns;
+  };
+
   return (
     <AdminContainer>
       <motion.div
@@ -249,19 +451,42 @@ const AdminSecurity: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography.Title level={2} style={{ marginBottom: 24, color: '#1a365d' }}>
+        <Typography.Title 
+          level={isMobile ? 4 : 2} 
+          style={{ 
+            marginBottom: isMobile ? 16 : 24, 
+            color: '#1a365d',
+            fontSize: isMobile ? '18px' : '30px'
+          }}
+        >
           <SafetyOutlined style={{ marginRight: 8 }} />
           安全管理
         </Typography.Title>
 
-        {/* 安全设置 */}
-        <SecurityCard title="安全设置" extra={<Button icon={<ReloadOutlined />}>刷新</Button>}>
-          <List
+        {/* 安全设置 - 移动端优化 */}
+        <SecurityCard 
+          title="安全设置" 
+          extra={
+            <Button 
+              icon={<ReloadOutlined />} 
+              size={isMobile ? "small" : "middle"}
+            >
+              刷新
+            </Button>
+          }
+        >
+          <MobileList
             dataSource={settings}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  title={item.description}
+                  title={
+                    <span style={{ 
+                      fontSize: isMobile ? '14px' : '16px' 
+                    }}>
+                      {item.description}
+                    </span>
+                  }
                   description={
                     item.type === 'boolean' ? (
                       <Switch
@@ -269,22 +494,32 @@ const AdminSecurity: React.FC = () => {
                         onChange={(checked) => updateSetting(item.name, checked)}
                         checkedChildren="启用"
                         unCheckedChildren="禁用"
+                        size={isMobile ? "small" : "default"}
                       />
                     ) : item.type === 'number' ? (
                       <InputNumber
                         value={item.value as number}
                         onChange={(value) => updateSetting(item.name, value || 0)}
                         min={1}
+                        size={isMobile ? "small" : "middle"}
+                        style={{ width: isMobile ? 80 : 100 }}
                       />
                     ) : (
                       <Input
                         value={item.value as string}
                         onChange={(e) => updateSetting(item.name, e.target.value)}
+                        size={isMobile ? "small" : "middle"}
+                        style={{ width: isMobile ? 120 : 150 }}
                       />
                     )
                   }
                 />
-                <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                <Typography.Text 
+                  type="secondary" 
+                  style={{ 
+                    fontSize: isMobile ? '11px' : '12px' 
+                  }}
+                >
                   {item.name}
                 </Typography.Text>
               </List.Item>
@@ -292,7 +527,7 @@ const AdminSecurity: React.FC = () => {
           />
         </SecurityCard>
 
-        {/* 安全日志 */}
+        {/* 安全日志 - 移动端优化 */}
         <Card 
           title="安全日志" 
           extra={
@@ -300,53 +535,15 @@ const AdminSecurity: React.FC = () => {
               icon={<ReloadOutlined />} 
               onClick={() => loadSecurityLogs(pagination.page)}
               loading={loading}
+              size={isMobile ? "small" : "middle"}
             >
               刷新
             </Button>
           }
         >
-          <Table
+          <MobileTable
             dataSource={logs}
-            columns={[
-              {
-                title: '时间',
-                dataIndex: 'timestamp',
-                key: 'timestamp',
-                render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
-              },
-              {
-                title: '级别',
-                dataIndex: 'level',
-                key: 'level',
-                render: (level: string) => getLogLevelTag(level)
-              },
-              {
-                title: '用户',
-                dataIndex: 'username',
-                key: 'username',
-                render: (username: string) => username || '系统'
-              },
-              {
-                title: 'IP地址',
-                dataIndex: 'ip',
-                key: 'ip'
-              },
-              {
-                title: '操作',
-                dataIndex: 'action',
-                key: 'action'
-              },
-              {
-                title: '消息',
-                dataIndex: 'message',
-                key: 'message',
-                render: (message: string) => (
-                  <Typography.Text ellipsis={{ tooltip: message }} style={{ maxWidth: 200 }}>
-                    {message}
-                  </Typography.Text>
-                )
-              }
-            ]}
+            columns={getLogColumns(isMobile)}
             rowKey="_id"
             loading={loading}
             pagination={{
@@ -356,9 +553,11 @@ const AdminSecurity: React.FC = () => {
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total) => `共 ${total} 条记录`,
-              onChange: (page) => loadSecurityLogs(page)
+              onChange: (page) => loadSecurityLogs(page),
+              size: isMobile ? "small" : "default"
             }}
-            scroll={{ x: 1000 }}
+            size={isMobile ? "small" : "middle"}
+            scroll={isMobile ? undefined : { x: 1000 }}
           />
         </Card>
       </motion.div>

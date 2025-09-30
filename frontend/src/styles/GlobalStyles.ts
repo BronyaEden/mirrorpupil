@@ -105,5 +105,17 @@ export const GlobalStyles = createGlobalStyle`
       padding: 0;
       margin: 0;
     }
+    
+    /* 当访问后台时隐藏前台导航栏 */
+    body.hide-front-nav .mobile-navbar,
+    body.hide-front-nav .mobile-top-navbar {
+      display: none !important;
+    }
+    
+    /* 后台内容区域适配 */
+    body.hide-front-nav #root {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
   `)}
 `;

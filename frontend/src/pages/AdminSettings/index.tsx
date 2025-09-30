@@ -35,6 +35,15 @@ const AdminContainer = styled.div`
   padding: 24px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const SettingCard = styled(Card)`
@@ -45,10 +54,116 @@ const SettingCard = styled(Card)`
   .ant-card-body {
     padding: 20px;
   }
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    
+    .ant-card-body {
+      padding: 16px 12px;
+    }
+    
+    .ant-card-head-title {
+      font-size: 16px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    
+    .ant-card-body {
+      padding: 12px 8px;
+    }
+    
+    .ant-card-head-title {
+      font-size: 15px;
+    }
+  }
 `;
 
 const ActionButton = styled(Button)`
   margin: 0 4px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin: 0 2px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 0 1px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+`;
+
+// 移动端表单优化
+const MobileForm = styled(Form)`
+  @media (max-width: 768px) {
+    .ant-form-item {
+      margin-bottom: 16px;
+    }
+    
+    .ant-form-item-label {
+      padding: 0 0 4px;
+    }
+    
+    .ant-input,
+    .ant-select,
+    .ant-switch {
+      font-size: 14px;
+    }
+    
+    .ant-form-item-explain {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+    
+    .ant-input,
+    .ant-select,
+    .ant-switch {
+      font-size: 13px;
+    }
+    
+    .ant-form-item-explain {
+      font-size: 11px;
+    }
+  }
+`;
+
+// 移动端提醒优化
+const MobileAlert = styled(Alert)`
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    
+    .ant-alert-message {
+      font-size: 14px;
+    }
+    
+    .ant-alert-description {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    
+    .ant-alert-message {
+      font-size: 13px;
+    }
+    
+    .ant-alert-description {
+      font-size: 11px;
+    }
+  }
 `;
 
 // 接口定义
@@ -106,6 +221,18 @@ const AdminSettings: React.FC = () => {
     }
   });
   const [form] = Form.useForm();
+  
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 加载系统设置
   useEffect(() => {
@@ -149,54 +276,104 @@ const AdminSettings: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography.Title level={2} style={{ marginBottom: 24, color: '#1a365d' }}>
+        <Typography.Title 
+          level={isMobile ? 4 : 2} 
+          style={{ 
+            marginBottom: isMobile ? 16 : 24, 
+            color: '#1a365d',
+            fontSize: isMobile ? '18px' : '30px'
+          }}
+        >
           <SettingOutlined style={{ marginRight: 8 }} />
           系统设置
         </Typography.Title>
 
-        <Form
+        <MobileForm
           form={form}
           layout="vertical"
           onFinish={handleSaveSettings}
           initialValues={settings}
         >
           {/* 基本设置 */}
-          <SettingCard title="基本设置">
-            <Row gutter={24}>
+          <SettingCard 
+            title={
+              <span style={{ 
+                fontSize: isMobile ? '16px' : '20px' 
+              }}>
+                基本设置
+              </span>
+            }
+          >
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['general', 'siteName']}
-                  label="网站名称"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      网站名称
+                    </span>
+                  }
                   rules={[{ required: true, message: '请输入网站名称' }]}
                 >
-                  <Input placeholder="请输入网站名称" />
+                  <Input 
+                    placeholder="请输入网站名称" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['general', 'siteDescription']}
-                  label="网站描述"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      网站描述
+                    </span>
+                  }
                 >
-                  <Input.TextArea placeholder="请输入网站描述" rows={3} />
+                  <Input.TextArea 
+                    placeholder="请输入网站描述" 
+                    rows={isMobile ? 2 : 3} 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['general', 'allowRegistration']}
-                  label="允许注册"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      允许注册
+                    </span>
+                  }
                   valuePropName="checked"
                 >
-                  <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+                  <Switch 
+                    checkedChildren="开启" 
+                    unCheckedChildren="关闭" 
+                    size={isMobile ? "small" : "default"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['general', 'defaultUserRole']}
-                  label="默认用户角色"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      默认用户角色
+                    </span>
+                  }
                 >
-                  <Select>
+                  <Select size={isMobile ? "middle" : "large"}>
                     <Option value="user">普通用户</Option>
                     <Option value="moderator">版主</Option>
                   </Select>
@@ -206,32 +383,69 @@ const AdminSettings: React.FC = () => {
           </SettingCard>
 
           {/* 上传设置 */}
-          <SettingCard title="上传设置">
-            <Row gutter={24}>
+          <SettingCard 
+            title={
+              <span style={{ 
+                fontSize: isMobile ? '16px' : '20px' 
+              }}>
+                上传设置
+              </span>
+            }
+          >
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['upload', 'maxFileSize']}
-                  label="最大文件大小（字节）"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      最大文件大小（字节）
+                    </span>
+                  }
                 >
-                  <Input placeholder="请输入最大文件大小" type="number" />
+                  <Input 
+                    placeholder="请输入最大文件大小" 
+                    type="number" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['upload', 'uploadPath']}
-                  label="上传路径"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      上传路径
+                    </span>
+                  }
                 >
-                  <Input placeholder="请输入上传路径" />
+                  <Input 
+                    placeholder="请输入上传路径" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24}>
                 <Form.Item
                   name={['upload', 'allowedFileTypes']}
-                  label="允许的文件类型"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      允许的文件类型
+                    </span>
+                  }
                 >
-                  <Select mode="tags" placeholder="请输入允许的文件类型">
+                  <Select 
+                    mode="tags" 
+                    placeholder="请输入允许的文件类型"
+                    size={isMobile ? "middle" : "large"}
+                  >
                     <Option value="image/*">图片文件</Option>
                     <Option value="video/*">视频文件</Option>
                     <Option value="audio/*">音频文件</Option>
@@ -244,90 +458,183 @@ const AdminSettings: React.FC = () => {
           </SettingCard>
 
           {/* 安全设置 */}
-          <SettingCard title="安全设置">
-            <Row gutter={24}>
+          <SettingCard 
+            title={
+              <span style={{ 
+                fontSize: isMobile ? '16px' : '20px' 
+              }}>
+                安全设置
+              </span>
+            }
+          >
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['security', 'jwtExpire']}
-                  label="JWT过期时间"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      JWT过期时间
+                    </span>
+                  }
                 >
-                  <Input placeholder="例如: 24h, 7d" />
+                  <Input 
+                    placeholder="例如: 24h, 7d" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['security', 'bcryptRounds']}
-                  label="BCrypt加密轮数"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      BCrypt加密轮数
+                    </span>
+                  }
                 >
-                  <Input placeholder="例如: 12" type="number" min={10} max={15} />
+                  <Input 
+                    placeholder="例如: 12" 
+                    type="number" 
+                    min={10} 
+                    max={15} 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24}>
                 <Form.Item
                   name={['security', 'enableTwoFactor']}
-                  label="启用双因素认证"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      启用双因素认证
+                    </span>
+                  }
                   valuePropName="checked"
                 >
-                  <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+                  <Switch 
+                    checkedChildren="开启" 
+                    unCheckedChildren="关闭" 
+                    size={isMobile ? "small" : "default"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
           </SettingCard>
 
           {/* 邮件设置 */}
-          <SettingCard title="邮件设置">
-            <Alert
+          <SettingCard 
+            title={
+              <span style={{ 
+                fontSize: isMobile ? '16px' : '20px' 
+              }}>
+                邮件设置
+              </span>
+            }
+          >
+            <MobileAlert
               message="邮件设置"
               description="配置SMTP服务器以启用邮件通知功能"
               type="info"
               showIcon
-              style={{ marginBottom: 24 }}
+              style={{ marginBottom: isMobile ? 16 : 24 }}
             />
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['email', 'smtpHost']}
-                  label="SMTP主机"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      SMTP主机
+                    </span>
+                  }
                 >
-                  <Input placeholder="例如: smtp.gmail.com" />
+                  <Input 
+                    placeholder="例如: smtp.gmail.com" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['email', 'smtpPort']}
-                  label="SMTP端口"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      SMTP端口
+                    </span>
+                  }
                 >
-                  <Input placeholder="例如: 587" type="number" />
+                  <Input 
+                    placeholder="例如: 587" 
+                    type="number" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['email', 'smtpUser']}
-                  label="SMTP用户名"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      SMTP用户名
+                    </span>
+                  }
                 >
-                  <Input placeholder="请输入SMTP用户名" />
+                  <Input 
+                    placeholder="请输入SMTP用户名" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name={['email', 'smtpPassword']}
-                  label="SMTP密码"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      SMTP密码
+                    </span>
+                  }
                 >
-                  <Input.Password placeholder="请输入SMTP密码" />
+                  <Input.Password 
+                    placeholder="请输入SMTP密码" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={24}>
+            <Row gutter={isMobile ? 12 : 24}>
               <Col xs={24}>
                 <Form.Item
                   name={['email', 'fromAddress']}
-                  label="发件人邮箱"
+                  label={
+                    <span style={{ 
+                      fontSize: isMobile ? '13px' : '14px' 
+                    }}>
+                      发件人邮箱
+                    </span>
+                  }
                 >
-                  <Input placeholder="例如: noreply@yoursite.com" />
+                  <Input 
+                    placeholder="例如: noreply@yoursite.com" 
+                    size={isMobile ? "middle" : "large"}
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -341,18 +648,20 @@ const AdminSettings: React.FC = () => {
                 htmlType="submit"
                 icon={<SaveOutlined />}
                 loading={loading}
+                size={isMobile ? "middle" : "large"}
               >
                 保存设置
               </Button>
               <Button
                 onClick={handleReset}
                 icon={<ReloadOutlined />}
+                size={isMobile ? "middle" : "large"}
               >
                 重置
               </Button>
             </Space>
           </Card>
-        </Form>
+        </MobileForm>
       </motion.div>
     </AdminContainer>
   );

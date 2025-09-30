@@ -61,6 +61,15 @@ const AdminContainer = styled.div`
   padding: 24px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+  }
 `;
 
 const StatsCard = styled(Card)`
@@ -77,16 +86,148 @@ const StatsCard = styled(Card)`
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
   }
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    
+    .ant-card-body {
+      padding: 16px 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    
+    .ant-card-body {
+      padding: 12px 8px;
+    }
+  }
 `;
 
 const ActionButton = styled(Button)`
   margin: 0 4px;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    margin: 0 2px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 0 1px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
 `;
 
 const StatusTag = styled(Tag)`
   border-radius: 12px;
   padding: 2px 8px;
   font-weight: 500;
+  
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 4px;
+    font-size: 11px;
+  }
+`;
+
+// 移动端统计卡片优化
+const MobileStatsCard = styled(Card)`
+  margin-bottom: 12px;
+  
+  .ant-card-body {
+    padding: 12px 8px;
+  }
+  
+  .ant-statistic {
+    .ant-statistic-title {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    
+    .ant-statistic-content {
+      font-size: 16px;
+      
+      .ant-statistic-content-value {
+        font-size: 16px;
+      }
+    }
+  }
+`;
+
+// 移动端表格优化
+const MobileTable = styled(Table)`
+  // 移动端优化 - 更紧凑
+  @media (max-width: 768px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 8px 4px;
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 6px 3px;
+      font-size: 11px;
+    }
+  }
+`;
+
+// 移动端标签页优化
+const MobileTabs = styled(Tabs)`
+  @media (max-width: 768px) {
+    .ant-tabs-nav {
+      .ant-tabs-tab {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-tabs-nav {
+      .ant-tabs-tab {
+        padding: 6px 10px;
+        font-size: 13px;
+        margin: 0 2px;
+      }
+    }
+  }
+`;
+
+// 移动端模态框优化
+const MobileModal = styled(Modal)`
+  @media (max-width: 768px) {
+    .ant-modal {
+      width: 90% !important;
+      max-width: 500px;
+    }
+    
+    .ant-modal-title {
+      font-size: 16px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .ant-modal {
+      width: 95% !important;
+      max-width: 300px;
+    }
+    
+    .ant-modal-title {
+      font-size: 15px;
+    }
+  }
 `;
 
 // 接口定义
@@ -238,171 +379,197 @@ const AdminDashboard: React.FC = () => {
     return <Tag color={type.color}>{type.text}</Tag>;
   };
 
-  // 用户表格列定义
-  const userColumns = [
-    {
-      title: '用户',
-      key: 'user',
-      render: (record: UserData) => (
-        <Space>
-          <Avatar 
-            src={record.avatar} 
-            icon={<UserOutlined />} 
-            size="small"
-          />
+  // 用户表格列定义 - 移动端优化
+  const getUserColumns = (isMobile: boolean) => {
+    const columns = [
+      {
+        title: '用户',
+        key: 'user',
+        render: (record: UserData) => (
+          <Space>
+            <Avatar 
+              src={record.avatar} 
+              icon={<UserOutlined />} 
+              size={isMobile ? "small" : "default"}
+            />
+            <div>
+              <div style={{ fontWeight: 500, fontSize: isMobile ? '12px' : '14px' }}>{record.username}</div>
+              <Typography.Text type="secondary" style={{ fontSize: isMobile ? '10px' : '12px' }}>
+                {record.email}
+              </Typography.Text>
+            </div>
+          </Space>
+        )
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        render: (_: any, record: UserData) => getUserStatusTag(record)
+      },
+      {
+        title: '注册时间',
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        render: (date: string) => dayjs(date).format('YYYY-MM-DD')
+      },
+      {
+        title: '最后登录',
+        dataIndex: 'lastLoginAt',
+        key: 'lastLoginAt',
+        render: (date: string) => date ? dayjs(date).fromNow() : '从未登录'
+      },
+      {
+        title: '登录次数',
+        dataIndex: 'loginCount',
+        key: 'loginCount'
+      },
+      {
+        title: '文件数',
+        dataIndex: 'fileCount',
+        key: 'fileCount'
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        render: (record: UserData) => (
+          <Space size="small">
+            <Tooltip title="编辑用户">
+              <Button 
+                type="primary" 
+                size="small" 
+                icon={<EditOutlined />}
+                onClick={() => handleEditUser(record)}
+              />
+            </Tooltip>
+            <Tooltip title={record.isActive ? "禁用用户" : "启用用户"}>
+              <Popconfirm
+                title={`确定${record.isActive ? '禁用' : '启用'}该用户？`}
+                onConfirm={() => handleToggleUserStatus(record)}
+              >
+                <Button 
+                  danger={record.isActive}
+                  size="small" 
+                  icon={record.isActive ? <DeleteOutlined /> : <CheckCircleOutlined />}
+                />
+              </Popconfirm>
+            </Tooltip>
+          </Space>
+        )
+      }
+    ];
+    
+    // 移动端只显示关键列
+    if (isMobile) {
+      return columns.filter(col => 
+        col.key === 'user' || 
+        col.key === 'status' || 
+        col.key === 'actions'
+      );
+    }
+    
+    return columns;
+  };
+
+  // 文件表格列定义 - 移动端优化
+  const getFileColumns = (isMobile: boolean) => {
+    const columns = [
+      {
+        title: '文件名',
+        key: 'filename',
+        render: (record: FileData) => (
           <div>
-            <div style={{ fontWeight: 500 }}>{record.username}</div>
-            <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.email}
+            <div style={{ fontWeight: 500, fontSize: isMobile ? '12px' : '14px' }}>{record.displayName}</div>
+            <Typography.Text type="secondary" style={{ fontSize: isMobile ? '10px' : '12px' }}>
+              {record.filename}
             </Typography.Text>
           </div>
-        </Space>
-      )
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (_: any, record: UserData) => getUserStatusTag(record)
-    },
-    {
-      title: '注册时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD')
-    },
-    {
-      title: '最后登录',
-      dataIndex: 'lastLoginAt',
-      key: 'lastLoginAt',
-      render: (date: string) => date ? dayjs(date).fromNow() : '从未登录'
-    },
-    {
-      title: '登录次数',
-      dataIndex: 'loginCount',
-      key: 'loginCount'
-    },
-    {
-      title: '文件数',
-      dataIndex: 'fileCount',
-      key: 'fileCount'
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      render: (record: UserData) => (
-        <Space>
-          <Tooltip title="编辑用户">
-            <Button 
-              type="primary" 
-              size="small" 
-              icon={<EditOutlined />}
-              onClick={() => handleEditUser(record)}
-            />
-          </Tooltip>
-          <Tooltip title={record.isActive ? "禁用用户" : "启用用户"}>
-            <Popconfirm
-              title={`确定${record.isActive ? '禁用' : '启用'}该用户？`}
-              onConfirm={() => handleToggleUserStatus(record)}
-            >
+        )
+      },
+      {
+        title: '类型',
+        dataIndex: 'fileType',
+        key: 'fileType',
+        render: (type: string) => getFileTypeTag(type)
+      },
+      {
+        title: '大小',
+        dataIndex: 'fileSize',
+        key: 'fileSize',
+        render: (size: number) => formatFileSize(size)
+      },
+      {
+        title: '上传者',
+        dataIndex: 'uploaderName',
+        key: 'uploaderName'
+      },
+      {
+        title: '下载量',
+        dataIndex: 'downloadCount',
+        key: 'downloadCount'
+      },
+      {
+        title: '查看量',
+        dataIndex: 'viewCount',
+        key: 'viewCount'
+      },
+      {
+        title: '可见性',
+        dataIndex: 'isPublic',
+        key: 'isPublic',
+        render: (isPublic: boolean) => (
+          <Tag color={isPublic ? 'green' : 'orange'}>
+            {isPublic ? '公开' : '私有'}
+          </Tag>
+        )
+      },
+      {
+        title: '上传时间',
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm')
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        render: (record: FileData) => (
+          <Space size="small">
+            <Tooltip title="查看详情">
               <Button 
-                danger={record.isActive}
+                type="primary" 
                 size="small" 
-                icon={record.isActive ? <DeleteOutlined /> : <CheckCircleOutlined />}
+                icon={<EyeOutlined />}
+                onClick={() => handleViewFile(record)}
               />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
-      )
+            </Tooltip>
+            <Tooltip title="删除文件">
+              <Popconfirm
+                title="确定删除该文件？"
+                onConfirm={() => handleDeleteFile(record)}
+              >
+                <Button 
+                  danger
+                  size="small" 
+                  icon={<DeleteOutlined />}
+                />
+              </Popconfirm>
+            </Tooltip>
+          </Space>
+        )
+      }
+    ];
+    
+    // 移动端只显示关键列
+    if (isMobile) {
+      return columns.filter(col => 
+        col.key === 'filename' || 
+        col.key === 'fileType' || 
+        col.key === 'actions'
+      );
     }
-  ];
-
-  // 文件表格列定义
-  const fileColumns = [
-    {
-      title: '文件名',
-      key: 'filename',
-      render: (record: FileData) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{record.displayName}</div>
-          <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.filename}
-          </Typography.Text>
-        </div>
-      )
-    },
-    {
-      title: '类型',
-      dataIndex: 'fileType',
-      key: 'fileType',
-      render: (type: string) => getFileTypeTag(type)
-    },
-    {
-      title: '大小',
-      dataIndex: 'fileSize',
-      key: 'fileSize',
-      render: (size: number) => formatFileSize(size)
-    },
-    {
-      title: '上传者',
-      dataIndex: 'uploaderName',
-      key: 'uploaderName'
-    },
-    {
-      title: '下载量',
-      dataIndex: 'downloadCount',
-      key: 'downloadCount'
-    },
-    {
-      title: '查看量',
-      dataIndex: 'viewCount',
-      key: 'viewCount'
-    },
-    {
-      title: '可见性',
-      dataIndex: 'isPublic',
-      key: 'isPublic',
-      render: (isPublic: boolean) => (
-        <Tag color={isPublic ? 'green' : 'orange'}>
-          {isPublic ? '公开' : '私有'}
-        </Tag>
-      )
-    },
-    {
-      title: '上传时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm')
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      render: (record: FileData) => (
-        <Space>
-          <Tooltip title="查看详情">
-            <Button 
-              type="primary" 
-              size="small" 
-              icon={<EyeOutlined />}
-              onClick={() => handleViewFile(record)}
-            />
-          </Tooltip>
-          <Tooltip title="删除文件">
-            <Popconfirm
-              title="确定删除该文件？"
-              onConfirm={() => handleDeleteFile(record)}
-            >
-              <Button 
-                danger
-                size="small" 
-                icon={<DeleteOutlined />}
-              />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
-      )
-    }
-  ];
+    
+    return columns;
+  };
 
   // 处理函数
   const handleEditUser = (user: UserData) => {
@@ -439,6 +606,18 @@ const AdminDashboard: React.FC = () => {
       console.error('更新失败:', error);
     }
   };
+  
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <AdminContainer>
@@ -447,104 +626,174 @@ const AdminDashboard: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography.Title level={2} style={{ marginBottom: 24, color: '#1a365d' }}>
+        <Typography.Title 
+          level={isMobile ? 4 : 2} 
+          style={{ 
+            marginBottom: isMobile ? 16 : 24, 
+            color: '#1a365d',
+            fontSize: isMobile ? '18px' : '30px'
+          }}
+        >
           <CloudServerOutlined style={{ marginRight: 8 }} />
           系统管理后台
         </Typography.Title>
 
-        {/* 统计概览 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} lg={6}>
-            <StatsCard>
-              <Statistic
-                title="总用户数"
-                value={dashboardStats.totalUsers}
-                prefix={<UserOutlined style={{ color: '#1890ff' }} />}
-              />
-            </StatsCard>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <StatsCard>
-              <Statistic
-                title="总文件数"
-                value={dashboardStats.totalFiles}
-                prefix={<FileOutlined style={{ color: '#52c41a' }} />}
-              />
-            </StatsCard>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <StatsCard>
-              <Statistic
-                title="活跃用户"
-                value={dashboardStats.activeUsers}
-                prefix={<WifiOutlined style={{ color: '#faad14' }} />}
-              />
-            </StatsCard>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <StatsCard>
-              <Statistic
-                title="存储使用"
-                value={dashboardStats.storageUsed.toFixed(6)} // 保留6位小数
-                suffix="GB"
-                prefix={<DatabaseOutlined style={{ color: '#722ed1' }} />}
-              />
-              <Progress 
-                percent={Math.round((dashboardStats.storageUsed / 10) * 100)} 
-                size="small" 
-                style={{ marginTop: 8 }}
-              />
-            </StatsCard>
-          </Col>
-        </Row>
+        {/* 统计概览 - 移动端优化 */}
+        {isMobile ? (
+          <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <MobileStatsCard>
+                <Statistic
+                  title="总用户数"
+                  value={dashboardStats.totalUsers}
+                  prefix={<UserOutlined style={{ color: '#1890ff', fontSize: '14px' }} />}
+                  valueStyle={{ fontSize: '16px' }}
+                  titleStyle={{ fontSize: '12px' }}
+                />
+              </MobileStatsCard>
+            </Col>
+            <Col span={12}>
+              <MobileStatsCard>
+                <Statistic
+                  title="总文件数"
+                  value={dashboardStats.totalFiles}
+                  prefix={<FileOutlined style={{ color: '#52c41a', fontSize: '14px' }} />}
+                  valueStyle={{ fontSize: '16px' }}
+                  titleStyle={{ fontSize: '12px' }}
+                />
+              </MobileStatsCard>
+            </Col>
+            <Col span={12}>
+              <MobileStatsCard>
+                <Statistic
+                  title="活跃用户"
+                  value={dashboardStats.activeUsers}
+                  prefix={<WifiOutlined style={{ color: '#faad14', fontSize: '14px' }} />}
+                  valueStyle={{ fontSize: '16px' }}
+                  titleStyle={{ fontSize: '12px' }}
+                />
+              </MobileStatsCard>
+            </Col>
+            <Col span={12}>
+              <MobileStatsCard>
+                <Statistic
+                  title="存储使用"
+                  value={dashboardStats.storageUsed.toFixed(2)}
+                  suffix="GB"
+                  prefix={<DatabaseOutlined style={{ color: '#722ed1', fontSize: '14px' }} />}
+                  valueStyle={{ fontSize: '16px' }}
+                  titleStyle={{ fontSize: '12px' }}
+                />
+                <Progress 
+                  percent={Math.round((dashboardStats.storageUsed / 10) * 100)} 
+                  size="small" 
+                  style={{ marginTop: 4 }}
+                  strokeColor="#722ed1"
+                />
+              </MobileStatsCard>
+            </Col>
+          </Row>
+        ) : (
+          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Col xs={24} sm={12} lg={6}>
+              <StatsCard>
+                <Statistic
+                  title="总用户数"
+                  value={dashboardStats.totalUsers}
+                  prefix={<UserOutlined style={{ color: '#1890ff' }} />}
+                />
+              </StatsCard>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <StatsCard>
+                <Statistic
+                  title="总文件数"
+                  value={dashboardStats.totalFiles}
+                  prefix={<FileOutlined style={{ color: '#52c41a' }} />}
+                />
+              </StatsCard>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <StatsCard>
+                <Statistic
+                  title="活跃用户"
+                  value={dashboardStats.activeUsers}
+                  prefix={<WifiOutlined style={{ color: '#faad14' }} />}
+                />
+              </StatsCard>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <StatsCard>
+                <Statistic
+                  title="存储使用"
+                  value={dashboardStats.storageUsed.toFixed(6)} // 保留6位小数
+                  suffix="GB"
+                  prefix={<DatabaseOutlined style={{ color: '#722ed1' }} />}
+                />
+                <Progress 
+                  percent={Math.round((dashboardStats.storageUsed / 10) * 100)} 
+                  size="small" 
+                  style={{ marginTop: 8 }}
+                />
+              </StatsCard>
+            </Col>
+          </Row>
+        )}
 
         {/* 系统状态 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} style={{ marginBottom: isMobile ? 16 : 24 }}>
           <Col span={24}>
             <StatsCard>
-              <Space size="large">
+              <Space size={isMobile ? "small" : "large"} wrap>
                 <div>
-                  <Typography.Text strong>服务器状态: </Typography.Text>
+                  <Typography.Text strong style={{ fontSize: isMobile ? '12px' : '14px' }}>服务器状态: </Typography.Text>
                   <Tag 
                     color={dashboardStats.serverStatus === 'online' ? 'green' : 'red'}
                     icon={dashboardStats.serverStatus === 'online' ? 
                       <CheckCircleOutlined /> : <WarningOutlined />}
+                    style={{ fontSize: isMobile ? '11px' : '12px' }}
                   >
                     {dashboardStats.serverStatus === 'online' ? '运行正常' : '异常'}
                   </Tag>
                 </div>
-                <Divider type="vertical" />
+                {!isMobile && <Divider type="vertical" />}
                 <Statistic
                   title="总查看量"
                   value={dashboardStats.totalViews}
                   prefix={<EyeOutlined />}
+                  valueStyle={{ fontSize: isMobile ? '16px' : '24px' }}
+                  titleStyle={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
-                <Divider type="vertical" />
+                {!isMobile && <Divider type="vertical" />}
                 <Statistic
                   title="总下载量"
                   value={dashboardStats.totalDownloads}
                   prefix={<DownloadOutlined />}
+                  valueStyle={{ fontSize: isMobile ? '16px' : '24px' }}
+                  titleStyle={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
-                <Divider type="vertical" />
+                {!isMobile && <Divider type="vertical" />}
                 <Statistic
                   title="消息总数"
                   value={dashboardStats.totalMessages}
                   prefix={<MessageOutlined />}
+                  valueStyle={{ fontSize: isMobile ? '16px' : '24px' }}
+                  titleStyle={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
               </Space>
             </StatsCard>
           </Col>
         </Row>
 
-        {/* 管理标签页 */}
+        {/* 管理标签页 - 移动端优化 */}
         <Card>
-          <Tabs 
+          <MobileTabs 
             activeKey={activeTab} 
             onChange={setActiveTab}
-            size="large"
+            size={isMobile ? "middle" : "large"}
           >
             <TabPane 
-              tab={<span><BarChartOutlined />数据概览</span>} 
+              tab={<span style={{ fontSize: isMobile ? '14px' : '16px' }}><BarChartOutlined />数据概览</span>} 
               key="overview"
             >
               <Alert
@@ -558,12 +807,12 @@ const AdminDashboard: React.FC = () => {
             </TabPane>
             
             <TabPane 
-              tab={<span><UserOutlined />用户管理</span>} 
+              tab={<span style={{ fontSize: isMobile ? '14px' : '16px' }}><UserOutlined />用户管理</span>} 
               key="users"
             >
-              <Table
+              <MobileTable
                 dataSource={users}
-                columns={userColumns}
+                columns={getUserColumns(isMobile)}
                 rowKey="_id"
                 loading={loading}
                 pagination={{
@@ -571,18 +820,20 @@ const AdminDashboard: React.FC = () => {
                   pageSize: 10,
                   showSizeChanger: true,
                   showQuickJumper: true,
-                  showTotal: (total) => `共 ${total} 条记录`
+                  showTotal: (total) => `共 ${total} 条记录`,
+                  size: isMobile ? "small" : "default"
                 }}
+                size={isMobile ? "small" : "middle"}
               />
             </TabPane>
             
             <TabPane 
-              tab={<span><FileOutlined />文件管理</span>} 
+              tab={<span style={{ fontSize: isMobile ? '14px' : '16px' }}><FileOutlined />文件管理</span>} 
               key="files"
             >
-              <Table
+              <MobileTable
                 dataSource={files}
-                columns={fileColumns}
+                columns={getFileColumns(isMobile)}
                 rowKey="_id"
                 loading={loading}
                 pagination={{
@@ -590,13 +841,15 @@ const AdminDashboard: React.FC = () => {
                   pageSize: 10,
                   showSizeChanger: true,
                   showQuickJumper: true,
-                  showTotal: (total) => `共 ${total} 条记录`
+                  showTotal: (total) => `共 ${total} 条记录`,
+                  size: isMobile ? "small" : "default"
                 }}
+                size={isMobile ? "small" : "middle"}
               />
             </TabPane>
             
             <TabPane 
-              tab={<span><MessageOutlined />消息管理</span>} 
+              tab={<span style={{ fontSize: isMobile ? '14px' : '16px' }}><MessageOutlined />消息管理</span>} 
               key="messages"
             >
               <Alert
@@ -606,11 +859,11 @@ const AdminDashboard: React.FC = () => {
                 showIcon
               />
             </TabPane>
-          </Tabs>
+          </MobileTabs>
         </Card>
 
-        {/* 编辑用户模态框 */}
-        <Modal
+        {/* 编辑用户模态框 - 移动端优化 */}
+        <MobileModal
           title="编辑用户信息"
           open={editModalVisible}
           onCancel={() => {
@@ -618,24 +871,24 @@ const AdminDashboard: React.FC = () => {
             form.resetFields();
           }}
           onOk={() => form.submit()}
-          width={600}
+          width={isMobile ? "95%" : 600}
         >
           <Form
             form={form}
             layout="vertical"
             onFinish={handleEditSubmit}
           >
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={isMobile ? 8 : 16}>
+              <Col span={24}>
                 <Form.Item
                   name="username"
                   label="用户名"
                   rules={[{ required: true, message: '请输入用户名' }]}
                 >
-                  <Input />
+                  <Input size={isMobile ? "middle" : "large"} />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={24}>
                 <Form.Item
                   name="email"
                   label="邮箱"
@@ -644,18 +897,18 @@ const AdminDashboard: React.FC = () => {
                     { type: 'email', message: '请输入有效的邮箱地址' }
                   ]}
                 >
-                  <Input />
+                  <Input size={isMobile ? "middle" : "large"} />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={16}>
+            <Row gutter={isMobile ? 8 : 16}>
               <Col span={12}>
                 <Form.Item
                   name="role"
                   label="角色"
                   rules={[{ required: true, message: '请选择角色' }]}
                 >
-                  <Select>
+                  <Select size={isMobile ? "middle" : "large"}>
                     <Option value="user">普通用户</Option>
                     <Option value="moderator">版主</Option>
                     <Option value="admin">管理员</Option>
@@ -668,7 +921,7 @@ const AdminDashboard: React.FC = () => {
                   label="状态"
                   valuePropName="checked"
                 >
-                  <Select>
+                  <Select size={isMobile ? "middle" : "large"}>
                     <Option value={true}>启用</Option>
                     <Option value={false}>禁用</Option>
                   </Select>
@@ -676,7 +929,7 @@ const AdminDashboard: React.FC = () => {
               </Col>
             </Row>
           </Form>
-        </Modal>
+        </MobileModal>
       </motion.div>
     </AdminContainer>
   );
